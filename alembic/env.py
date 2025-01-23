@@ -1,11 +1,12 @@
-import os
 import asyncio
+import os
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import pool
-from alembic import context
 from dotenv import load_dotenv
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from alembic import context
 
 # ★ models.py에서 Base를 import
 from app.models.base import Base
@@ -21,7 +22,7 @@ MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 DATABASE_URL = f"mysql+asyncmy://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
 
 config = context.config
-config.set_section_option('alembic', 'sqlalchemy.url', DATABASE_URL)
+config.set_section_option("alembic", "sqlalchemy.url", DATABASE_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -29,10 +30,12 @@ if config.config_file_name is not None:
 # ★ target_metadata를 Base.metadata로 설정
 target_metadata = Base.metadata
 
+
 def do_run_migrations(connection):
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
         context.run_migrations()
+
 
 async def run_migrations_online():
     engine = create_async_engine(
@@ -44,6 +47,7 @@ async def run_migrations_online():
         # 동기 함수(do_run_migrations)를 비동기 run_sync로 호출
         await connection.run_sync(do_run_migrations)
 
+
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -54,6 +58,7 @@ def run_migrations_offline():
     )
     with context.begin_transaction():
         context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

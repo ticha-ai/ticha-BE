@@ -1,0 +1,11 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.9.3  # 안정적인 최신 버전으로 변경
+    hooks:
+      - id: isort
+        args: ["--profile=black"]

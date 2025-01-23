@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, Enum, ForeignKey
+from sqlalchemy import Column, Enum, ForeignKey, Integer
+
 from app.models.base import Base, BaseTimestamp
+
 
 class GradingResult(Base, BaseTimestamp):
     __tablename__ = "grading_results"
