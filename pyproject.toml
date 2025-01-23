@@ -11,6 +11,14 @@ fastapi = "^0.115.6"
 uvicorn = "^0.34.0"
 openapi = "^2.0.0"
 python-dotenv = "^1.0.1"
+alembic = "^1.14.1"
+sqlalchemy = "^2.0.37"
+asyncmy = "^0.2.10"
+pydantic = "^2.10.5"
+asyncio = "^3.4.3"
+pydantic-settings = "^2.7.1"
+greenlet = "^3.1.1"
+cryptography = "^44.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
