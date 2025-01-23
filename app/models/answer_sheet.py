@@ -1,14 +1,15 @@
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
 from sqlalchemy import TIMESTAMP, Enum, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, BaseTimestamp
 
 if TYPE_CHECKING:
+    from app.models.grading_result import GradingResult
     from app.models.quiz import Quiz
     from app.models.user import User
     from app.models.user_answer import UserAnswer
-    from app.models.grading_result import GradingResult
 
 
 class AnswerSheet(Base, BaseTimestamp):

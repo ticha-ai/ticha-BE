@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, BaseTimestamp
 
 if TYPE_CHECKING:
-    from app.models.quiz import Quiz
     from app.models.problem import Problem
+    from app.models.quiz import Quiz
 
 
 class ProblemInQuiz(Base, BaseTimestamp):

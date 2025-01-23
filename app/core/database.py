@@ -12,8 +12,5 @@ async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=
 
 # 의존성 주입
 async def get_db():
-    try:
-        async with async_session() as session:
-            yield session
-    except Exception as e:
-        raise
+    async with async_session() as session:
+        yield session

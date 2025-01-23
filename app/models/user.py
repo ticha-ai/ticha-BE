@@ -1,8 +1,16 @@
-from typing import List
+from typing import TYPE_CHECKING, List
+
 from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, BaseTimestamp
+
+# 타입 힌트에 필요한 모델 임포트
+if TYPE_CHECKING:
+    from app.models.answer_sheet import AnswerSheet
+    from app.models.quiz import Quiz
+    from app.models.study_log import StudyLog
+    from app.models.user_problem_stat import UserProblemStat
 
 
 class User(Base, BaseTimestamp):
