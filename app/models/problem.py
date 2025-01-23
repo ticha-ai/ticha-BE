@@ -7,7 +7,7 @@ class Problem(Base, BaseTimestamp):
     id = Column(Integer, primary_key=True, autoincrement=True)
     chapter_id = Column(Integer, ForeignKey("chapters.id"), nullable=False)
     difficulty = Column(Enum("easy", "medium", "hard"), nullable=False)
-    image_url = Column(String)
+    image_url = Column(String(255))
     correct_answer = Column(Text, nullable=False)
     explanation = Column(Text)
     attempt_count = Column(Integer, default=0)

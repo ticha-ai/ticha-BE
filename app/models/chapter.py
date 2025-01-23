@@ -5,7 +5,7 @@ class Chapter(Base, BaseTimestamp):
     __tablename__ = "chapters"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False)
+    name = Column(String(255), nullable=False)
     description = Column(Text)
     problems_count = Column(Integer, default=0)
     chapter_order = Column(Integer)
