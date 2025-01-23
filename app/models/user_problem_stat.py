@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, Boolean, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Integer
+
 from app.models.base import Base, BaseTimestamp
 
 

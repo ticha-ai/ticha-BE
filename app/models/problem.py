@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text
+
 from app.models.base import Base, BaseTimestamp
 
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, TIMESTAMP, func
+from sqlalchemy import TIMESTAMP, Column, func
 from sqlalchemy.orm import DeclarativeBase
 
 

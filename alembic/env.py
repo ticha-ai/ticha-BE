@@ -1,12 +1,12 @@
-import os
 import asyncio
+import os
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import pool
-from alembic import context
 from dotenv import load_dotenv
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import create_async_engine
 
+from alembic import context
 # ★ models.py에서 Base를 import
 from app.models.base import Base
 
