@@ -23,11 +23,11 @@ jobs:
       with:
         python-version: "3.11"
 
-    # 3. Poetry 설치
+    # 3. Poetry 설치 및 경로 설정
     - name: Install Poetry
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
-        echo "POETRY_HOME=$HOME/.local/bin" >> $GITHUB_ENV
+        echo "POETRY_HOME=$HOME/.local" >> $GITHUB_ENV
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     # 4. 의존성 설치
