@@ -8,6 +8,8 @@ class Base(DeclarativeBase):
 
 
 class BaseTimestamp:
-    created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)  # 생성 시간
+    created_at = Column(
+        TIMESTAMP, server_default=func.now(), nullable=False
+    )  # 생성 시간
     updated_at = Column(TIMESTAMP, onupdate=func.now())  # 수정 시간
     deleted_at = Column(TIMESTAMP, nullable=True)  # 삭제 시간 (soft delete)
