@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer
+
 from app.models.base import Base, BaseTimestamp
+
 
 class ProblemInQuiz(Base, BaseTimestamp):
     __tablename__ = "problems_in_quizzes"

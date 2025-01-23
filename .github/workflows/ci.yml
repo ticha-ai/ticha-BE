@@ -1,0 +1,52 @@
+name: CI for Ticha Backend
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 코드 체크아웃
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2. Python 환경 설정
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    # 3. Poetry 설치 및 경로 설정
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "POETRY_HOME=$HOME/.local" >> $GITHUB_ENV
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    # 4. 의존성 설치
+    - name: Install dependencies
+      run: |
+        poetry install --no-root
+
+    # 5. 린트 검사
+    - name: Run code formatter check (Black)
+      run: |
+        poetry run black --check .
+
+    - name: Run import sorting check (isort)
+      run: |
+        poetry run isort --check .
+
+    # 6. 테스트 실행
+    - name: Run tests with Pytest
+      run: |
+        poetry run pytest

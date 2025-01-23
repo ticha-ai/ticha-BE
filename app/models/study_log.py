@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, Date, ForeignKey
+from sqlalchemy import Column, Date, ForeignKey, Integer
+
 from app.models.base import Base, BaseTimestamp
+
 
 class StudyLog(Base, BaseTimestamp):
     __tablename__ = "study_logs"

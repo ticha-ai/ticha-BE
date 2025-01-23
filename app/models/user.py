@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP
+from sqlalchemy import TIMESTAMP, Boolean, Column, Integer, String
+
 from app.models.base import Base, BaseTimestamp
+
 
 class User(Base, BaseTimestamp):
     __tablename__ = "users"
