@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - test-ci  # test-ci 브랜치도 CI 실행
   pull_request:
     branches:
       - main
+      - test-ci
 
 jobs:
   test:
