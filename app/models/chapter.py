@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, TIMESTAMP
 from app.models.base import Base, BaseTimestamp
 
+
 class Chapter(Base, BaseTimestamp):
     __tablename__ = "chapters"
 

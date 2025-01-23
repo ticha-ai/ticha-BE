@@ -1,8 +1,10 @@
 from sqlalchemy.orm import DeclarativeBase
 
+
 # Base 클래스 정의
 class Base(DeclarativeBase):
     pass
+
 
 # 모든 모델 import
 from app.models.user import User

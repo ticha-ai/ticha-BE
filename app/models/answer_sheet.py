@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, Enum, TIMESTAMP, ForeignKey
 from app.models.base import Base, BaseTimestamp
 
+
 class AnswerSheet(Base, BaseTimestamp):
     __tablename__ = "answer_sheets"
 

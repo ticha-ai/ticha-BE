@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey
 from app.models.base import Base, BaseTimestamp
 
+
 class Problem(Base, BaseTimestamp):
     __tablename__ = "problems"
 

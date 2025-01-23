@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from app.models.base import Base, BaseTimestamp
 
+
 class UserAnswer(Base, BaseTimestamp):
     __tablename__ = "user_answers"
 
