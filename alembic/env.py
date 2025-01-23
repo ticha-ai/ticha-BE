@@ -7,6 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
+
 # ★ models.py에서 Base를 import
 from app.models.base import Base
 
