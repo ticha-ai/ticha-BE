@@ -1,15 +1,23 @@
-from sqlalchemy import TIMESTAMP, Column, func
-from sqlalchemy.orm import DeclarativeBase
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import TIMESTAMP, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-# Base 클래스 정의
 class Base(DeclarativeBase):
+    """기본 Base 클래스"""
+
     pass
 
 
 class BaseTimestamp:
-    created_at = Column(
+    """타임스탬프 믹스인(Mixin)"""
+
+    created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP, server_default=func.now(), nullable=False
-    )  # 생성 시간
-    updated_at = Column(TIMESTAMP, onupdate=func.now())  # 수정 시간
-    deleted_at = Column(TIMESTAMP, nullable=True)  # 삭제 시간 (soft delete)
+    )
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        TIMESTAMP, onupdate=func.now(), nullable=True
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP, nullable=True)
