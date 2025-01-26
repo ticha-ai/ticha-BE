@@ -1,8 +1,8 @@
-"""Initial migration
+"""initialize
 
-Revision ID: 9c50b61c0cb2
+Revision ID: 15452612bba7
 Revises: 
-Create Date: 2025-01-23 16:30:31.080257
+Create Date: 2025-01-26 23:06:28.724170
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "9c50b61c0cb2"
+revision: str = "15452612bba7"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("problems_count", sa.Integer(), nullable=True),
+        sa.Column("problems_count", sa.Integer(), nullable=False),
         sa.Column("chapter_order", sa.Integer(), nullable=True),
         sa.Column(
             "created_at",
@@ -46,12 +46,12 @@ def upgrade() -> None:
         sa.Column("password", sa.String(length=255), nullable=False),
         sa.Column("oauth_provider", sa.String(length=50), nullable=True),
         sa.Column("oauth_id", sa.String(length=255), nullable=True),
-        sa.Column("review_completed_quizzes_count", sa.Integer(), nullable=True),
-        sa.Column("graded_quizzes_count", sa.Integer(), nullable=True),
-        sa.Column("ongoing_quizzes_count", sa.Integer(), nullable=True),
+        sa.Column("review_completed_quizzes_count", sa.Integer(), nullable=False),
+        sa.Column("graded_quizzes_count", sa.Integer(), nullable=False),
+        sa.Column("ongoing_quizzes_count", sa.Integer(), nullable=False),
         sa.Column("last_login_at", sa.TIMESTAMP(), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=True),
-        sa.Column("is_deleted", sa.Boolean(), nullable=True),
+        sa.Column("is_active", sa.Boolean(), nullable=False),
+        sa.Column("is_deleted", sa.Boolean(), nullable=False),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(),
@@ -60,6 +60,9 @@ def upgrade() -> None:
         ),
         sa.Column("updated_at", sa.TIMESTAMP(), nullable=True),
         sa.Column("deleted_at", sa.TIMESTAMP(), nullable=True),
+        sa.CheckConstraint("graded_quizzes_count >= 0", name="ck_graded_cnt"),
+        sa.CheckConstraint("ongoing_quizzes_count >= 0", name="ck_ongoing_cnt"),
+        sa.CheckConstraint("review_completed_quizzes_count >= 0", name="ck_review_cnt"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email"),
     )
@@ -71,8 +74,8 @@ def upgrade() -> None:
         sa.Column("image_url", sa.String(length=255), nullable=True),
         sa.Column("correct_answer", sa.Text(), nullable=False),
         sa.Column("explanation", sa.Text(), nullable=True),
-        sa.Column("attempt_count", sa.Integer(), nullable=True),
-        sa.Column("correct_count", sa.Integer(), nullable=True),
+        sa.Column("attempt_count", sa.Integer(), nullable=False),
+        sa.Column("correct_count", sa.Integer(), nullable=False),
         sa.Column("problem_text", sa.Text(), nullable=False),
         sa.Column(
             "created_at",
@@ -96,9 +99,7 @@ def upgrade() -> None:
         sa.Column(
             "difficulty", sa.Enum("easy", "medium", "hard", "random"), nullable=False
         ),
-        sa.Column(
-            "total_problems_count", sa.Enum("5", "10", "20", "30"), nullable=False
-        ),
+        sa.Column("total_problems_count", sa.Integer(), nullable=False),
         sa.Column(
             "status", sa.Enum("in_progress", "graded", "reviewed"), nullable=False
         ),
@@ -126,7 +127,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("quiz_date", sa.Date(), nullable=False),
-        sa.Column("quiz_count", sa.Integer(), nullable=True),
+        sa.Column("quiz_count", sa.Integer(), nullable=False),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(),
@@ -147,12 +148,14 @@ def upgrade() -> None:
         sa.Column("quiz_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column(
-            "status", sa.Enum("in_progress", "graded", "reviewed"), nullable=False
+            "status",
+            sa.Enum("in_progress", "graded", "reviewed", name="answersheetstatus"),
+            nullable=False,
         ),
         sa.Column("resumed_at", sa.TIMESTAMP(), nullable=True),
         sa.Column("stopped_at", sa.TIMESTAMP(), nullable=True),
         sa.Column("passed_time", sa.Integer(), nullable=True),
-        sa.Column("unanswered_count", sa.Integer(), nullable=True),
+        sa.Column("unanswered_count", sa.Integer(), nullable=False),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(),
@@ -200,9 +203,9 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("problem_id", sa.Integer(), nullable=False),
-        sa.Column("is_starred", sa.Boolean(), nullable=True),
-        sa.Column("correct_attempts_count", sa.Integer(), nullable=True),
-        sa.Column("total_attempts_count", sa.Integer(), nullable=True),
+        sa.Column("is_starred", sa.Boolean(), nullable=False),
+        sa.Column("correct_attempts_count", sa.Integer(), nullable=False),
+        sa.Column("total_attempts_count", sa.Integer(), nullable=False),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(),
@@ -251,9 +254,9 @@ def upgrade() -> None:
         sa.Column("answer_sheet_id", sa.Integer(), nullable=False),
         sa.Column("problem_id", sa.Integer(), nullable=False),
         sa.Column("user_answer", sa.Text(), nullable=True),
-        sa.Column("is_correct", sa.Boolean(), nullable=True),
-        sa.Column("is_starred", sa.Boolean(), nullable=True),
-        sa.Column("has_answer", sa.Boolean(), nullable=True),
+        sa.Column("is_correct", sa.Boolean(), nullable=False),
+        sa.Column("is_starred", sa.Boolean(), nullable=False),
+        sa.Column("has_answer", sa.Boolean(), nullable=False),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(),
