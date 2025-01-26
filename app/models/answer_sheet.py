@@ -28,7 +28,9 @@ class AnswerSheet(Base, BaseTimestamp):
     quiz_id: Mapped[int] = mapped_column(ForeignKey("quizzes.id"), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     status: Mapped[AnswerSheetStatus] = mapped_column(
-        SQLAlchemyEnum(AnswerSheetStatus),
+        SQLAlchemyEnum(
+            AnswerSheetStatus, values_callable=lambda obj: [e.value for e in obj]
+        ),
         nullable=False,
     )
     resumed_at: Mapped[TIMESTAMP | None] = mapped_column(TIMESTAMP, nullable=True)

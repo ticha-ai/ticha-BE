@@ -1,8 +1,8 @@
-"""Initial migration
+"""initialize
 
-Revision ID: deba6b6c7c7e
+Revision ID: 15452612bba7
 Revises: 
-Create Date: 2025-01-26 22:37:04.165786
+Create Date: 2025-01-26 23:06:28.724170
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "deba6b6c7c7e"
+revision: str = "15452612bba7"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -149,7 +149,7 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("IN_PROGRESS", "GRADED", "REVIEWED", name="answersheetstatus"),
+            sa.Enum("in_progress", "graded", "reviewed", name="answersheetstatus"),
             nullable=False,
         ),
         sa.Column("resumed_at", sa.TIMESTAMP(), nullable=True),
