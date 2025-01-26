@@ -1,6 +1,9 @@
+from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import TIMESTAMP, Enum, ForeignKey, Integer
+from sqlalchemy import TIMESTAMP
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, BaseTimestamp
@@ -12,14 +15,21 @@ if TYPE_CHECKING:
     from app.models.user_answer import UserAnswer
 
 
+class AnswerSheetStatus(PyEnum):
+    IN_PROGRESS = "in_progress"
+    GRADED = "graded"
+    REVIEWED = "reviewed"
+
+
 class AnswerSheet(Base, BaseTimestamp):
     __tablename__ = "answer_sheets"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     quiz_id: Mapped[int] = mapped_column(ForeignKey("quizzes.id"), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    status: Mapped[str] = mapped_column(
-        Enum("in_progress", "graded", "reviewed"), nullable=False
+    status: Mapped[AnswerSheetStatus] = mapped_column(
+        SQLAlchemyEnum(AnswerSheetStatus),
+        nullable=False,
     )
     resumed_at: Mapped[TIMESTAMP | None] = mapped_column(TIMESTAMP, nullable=True)
     stopped_at: Mapped[TIMESTAMP | None] = mapped_column(TIMESTAMP, nullable=True)
