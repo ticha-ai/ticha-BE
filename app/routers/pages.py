@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/index")
 async def serve_index_page():
     """
     index.html 파일 반환
