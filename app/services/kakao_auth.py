@@ -3,7 +3,7 @@ import httpx
 
 async def get_kakao_access_token(code: str, client_id: str, redirect_uri: str) -> str:
     """
-    카카오로부터 액세스 토큰을 요청
+    카카오 로그인에서 액세스 토큰 요청
     """
     token_url = "https://kauth.kakao.com/oauth/token"
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -18,7 +18,7 @@ async def get_kakao_access_token(code: str, client_id: str, redirect_uri: str) -
         response = await client.post(token_url, headers=headers, data=data)
         if response.status_code == 200:
             return response.json().get("access_token")
-        response.raise_for_status()
+        raise ValueError("Failed to get access token")
 
 
 async def get_kakao_profile(access_token: str) -> dict:
