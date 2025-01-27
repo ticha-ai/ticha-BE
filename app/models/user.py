@@ -29,6 +29,7 @@ class User(Base, BaseTimestamp):
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     oauth_provider: Mapped[str | None] = mapped_column(String(50), nullable=True)
     oauth_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    refresh_token: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     review_completed_quizzes_count: Mapped[int] = mapped_column(Integer, default=0)
     graded_quizzes_count: Mapped[int] = mapped_column(Integer, default=0)

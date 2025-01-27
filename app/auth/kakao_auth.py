@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 
 from app.core.config import settings
 from app.models.user import User
-from app.services.jwt_service import create_access_token
+from app.services.jwt_service import create_access_token, create_refresh_token
 from app.services.kakao_auth import get_kakao_access_token, get_kakao_profile
 
 
@@ -37,12 +37,13 @@ async def get_or_create_user(
 
 async def kakao_login(code: str, db: AsyncSession) -> dict:
     """
-    카카오 로그인 처리: 액세스 토큰 요청, 사용자 생성/조회, JWT 발급
+    카카오 로그인 처리 및 Access/Refresh Token 발급
     """
+    # 1. 카카오 Access Token 요청
     access_token = await get_kakao_access_token(
         code=code,
-        client_id=settings.KAKAO_CLIENT_ID,  # 환경 변수에서 가져옴
-        redirect_uri=settings.KAKAO_REDIRECT_URI,  # 환경 변수에서 가져옴
+        client_id=settings.KAKAO_CLIENT_ID,
+        redirect_uri=settings.KAKAO_REDIRECT_URI,
     )
     profile = await get_kakao_profile(access_token)
     kakao_id = str(profile.get("id"))
@@ -50,8 +51,15 @@ async def kakao_login(code: str, db: AsyncSession) -> dict:
     nickname = profile.get("properties", {}).get("nickname")
 
     user = await get_or_create_user(kakao_id, email, nickname, db)
-    token = create_access_token(
-        data={"user_id": user.id}, expires_delta=timedelta(hours=1)
-    )
 
-    return {"user": user, "access_token": token}
+    # Access/Refresh Token 생성
+    access_token = create_access_token(
+        data={"user_id": user.id}, expires_delta=timedelta(minutes=30)
+    )
+    refresh_token = create_refresh_token(data={"user_id": user.id})
+
+    # DB에 Refresh Token 저장 (기존 토큰을 덮어씀)
+    user.refresh_token = refresh_token
+    await db.commit()
+
+    return {"user": user, "access_token": access_token, "refresh_token": refresh_token}
