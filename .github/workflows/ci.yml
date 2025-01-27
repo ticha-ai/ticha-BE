@@ -48,5 +48,16 @@ jobs:
 
     # 6. 테스트 실행
     - name: Run tests with Pytest
+      env:
+        MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+        MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+        MYSQL_USER: ${{ secrets.MYSQL_USER }}
+        MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+        KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+        KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+        KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
+        SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        ALGORITHM: ${{ secrets.JWT_ALGORITHM }}
       run: |
         poetry run pytest
