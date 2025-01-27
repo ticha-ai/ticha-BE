@@ -5,9 +5,11 @@ router = APIRouter()
 
 
 from pathlib import Path
+
 from fastapi import HTTPException
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 @router.get("/index")
 async def serve_index_page():
