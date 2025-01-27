@@ -17,6 +17,17 @@
             <button type="submit">Login</button>
         </form>
         <a href="/oauth/kakao/login" class="kakao-button">Login with Kakao</a>
+        <div id="status"></div>
     </div>
+    <script>
+        // URL 파라미터로 로그인 상태 확인
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("login") && params.get("login") === "success") {
+            const userId = params.get("user_id");
+            document.getElementById("status").innerHTML = `Welcome back, User ID: ${userId}`;
+        } else if (params.has("error")) {
+            document.getElementById("status").innerText = "Login Failed. Please try again.";
+        }
+    </script>
 </body>
 </html>

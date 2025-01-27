@@ -15,7 +15,12 @@ class Settings(BaseSettings):
 
     # 카카오 API 환경 변수
     KAKAO_CLIENT_ID: str
+    KAKAO_CLIENT_SECRET: str
     KAKAO_REDIRECT_URI: str  # 리다이렉트 URI 반영
+
+    # JWT 환경 변수
+    SECRET_KEY: str
+    ALGORITHM: str
 
     # DATABASE_URL 생성 메서드
     @property
