@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.routers import auth, pages
+from app.routers import auth, pages, quiz
 
 app = FastAPI()
 
@@ -12,6 +12,7 @@ app.mount("/static", StaticFiles(directory="app/static", html=True), name="stati
 # Routers
 app.include_router(auth.router, tags=["auth"])  # prefix 없이 등록
 app.include_router(pages.router, tags=["pages"])
+app.include_router(quiz.router, prefix="/api/v1", tags=["quizzes"])
 
 
 @app.get("/")
