@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index Page</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the App</h1>
+        <a href="/oauth/kakao/login" class="kakao-button">Login or Sign Up with Kakao</a>
+        <div id="status"></div>
+        <div id="user-info" style="margin-top: 20px;"></div>
+    </div>
+    <script>
+        // URL 파라미터로 로그인 상태 확인
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("login") && params.get("login") === "success") {
+            const userId = params.get("user_id");
+            document.getElementById("status").innerText = "Login Successful!";
+            document.getElementById("user-info").innerHTML = `Welcome! Your User ID is: <b>${userId}</b>`;
+        } else if (params.has("error")) {
+            document.getElementById("status").innerText = "Login Failed. Please try again.";
+        }
+    </script>
+</body>
+</html>

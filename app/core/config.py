@@ -6,14 +6,23 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", extra="allow"
     )
 
-    # 환경변수 정의
+    # MySQL 환경 변수
     MYSQL_ROOT_PASSWORD: str
     MYSQL_DATABASE: str
     MYSQL_USER: str
     MYSQL_PASSWORD: str
     MYSQL_PORT: int
 
-    # DATABASE_URL 생성 메서드 추가
+    # 카카오 API 환경 변수
+    KAKAO_CLIENT_ID: str
+    KAKAO_CLIENT_SECRET: str
+    KAKAO_REDIRECT_URI: str  # 리다이렉트 URI 반영
+
+    # JWT 환경 변수
+    SECRET_KEY: str
+    ALGORITHM: str
+
+    # DATABASE_URL 생성 메서드
     @property
     def DATABASE_URL(self) -> str:
         return f"mysql+asyncmy://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@localhost:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"

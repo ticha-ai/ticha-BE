@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Login Page</h1>
+        <form action="/login" method="post">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br>
+            <button type="submit">Login</button>
+        </form>
+        <a href="/oauth/kakao/login" class="kakao-button">Login with Kakao</a>
+        <div id="status"></div>
+    </div>
+    <script>
+        // URL 파라미터로 로그인 상태 확인
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("login") && params.get("login") === "success") {
+            const userId = params.get("user_id");
+            document.getElementById("status").innerHTML = `Welcome back, User ID: ${userId}`;
+        } else if (params.has("error")) {
+            document.getElementById("status").innerText = "Login Failed. Please try again.";
+        }
+    </script>
+</body>
+</html>
