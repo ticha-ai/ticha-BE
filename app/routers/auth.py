@@ -1,7 +1,8 @@
 import secrets  # CSRF 방지를 위한 state 생성
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -56,43 +57,68 @@ async def kakao_callback(code: str = Query(...), db: AsyncSession = Depends(get_
 
 ### ✅ Google OAuth 개선 (보안 강화)
 @router.get("/oauth/google/login")
-async def google_login_redirect():
-    """
-    구글 로그인 페이지로 리디렉션 (CSRF 방지, 리프레시 토큰 요청, 사용자 동의 화면 강제)
-    """
-    state = secrets.token_urlsafe(16)  # CSRF 방지를 위한 랜덤 state 값 생성
+async def google_login_redirect(request: Request):
+    """구글 로그인 페이지로 리디렉션"""
+    import secrets
+
+    state = secrets.token_urlsafe(32)  # 랜덤 state 값 생성
+
+    request.session["oauth_state"] = {
+        "value": state,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    # ✅ 디버깅 로그 추가
+    print(f"Generated state: {state}")
+    print(f"Session stored state: {request.session.get('oauth_state')}")
 
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
         "response_type": "code",
         "scope": "openid email profile",
-        "state": state,  # ✅ CSRF 공격 방지
-        "access_type": "offline",  # ✅ 리프레시 토큰 요청 가능
-        "prompt": "consent",  # ✅ 사용자 동의 화면 강제 표시
+        "state": state,
+        "access_type": "offline",
+        "prompt": "consent",
     }
     google_auth_url = f"https://accounts.google.com/o/oauth2/auth?{urlencode(params)}"
 
-    return {
-        "auth_url": google_auth_url,
-        "state": state,
-    }  # 클라이언트가 state를 저장하도록 반환
+    return {"auth_url": google_auth_url}
 
 
 @router.get("/oauth/google/callback")
 async def google_callback(
+    request: Request,
     code: str = Query(...),
-    state: str = Query(...),  # ✅ 클라이언트에서 받은 state를 검증
+    state: str = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    구글 인증 후 Access Token 및 사용자 정보 반환
-    """
+    """구글 인증 후 Access Token 및 사용자 정보 반환"""
     try:
-        # 🔹 클라이언트에서 받은 state가 유효한지 확인 (실제 구현에서는 세션 저장 후 비교 필요)
-        if not state:
+        # ✅ 디버깅 로그 추가
+        print("Received state from client:", state)
+        print("Stored state in session before pop:", request.session.get("oauth_state"))
+
+        # 🔹 세션에서 저장된 state 값을 가져옴
+        stored_state = request.session.get("oauth_state", None)  # ✅ pop 대신 get 사용
+
+        if not stored_state:
+            print("❌ No state found in session!")  # 로그 추가
             raise HTTPException(status_code=400, detail="Invalid state parameter")
 
+        if stored_state["value"] != state:
+            print(
+                f"❌ State mismatch! Stored: {stored_state['value']}, Received: {state}"
+            )
+            raise HTTPException(status_code=400, detail="Invalid state parameter")
+
+        # ✅ State 생성 시간 검증 (10분 초과 시 만료)
+        created_at = datetime.fromisoformat(stored_state["created_at"])
+        if datetime.utcnow() - created_at > timedelta(minutes=10):
+            print("❌ State expired!")  # 로그 추가
+            raise HTTPException(status_code=400, detail="State parameter expired")
+
+        # ✅ Google OAuth 로그인 처리
         result = await google_login(code, db)
         user = result["user"]
         access_token = result["access_token"]
@@ -107,6 +133,7 @@ async def google_callback(
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}")
 
