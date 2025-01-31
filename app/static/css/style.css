@@ -72,3 +72,24 @@ button:hover {
 .kakao-button:hover {
     background-color: #e0c200;
 }
+
+.google-button {
+    display: inline-block;
+    background-color: #ffffff;
+    color: #444;
+    border: 1px solid #ddd;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.google-button img {
+    margin-right: 10px;
+}

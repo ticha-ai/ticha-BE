@@ -16,9 +16,19 @@
             <input type="password" id="password" name="password" required><br>
             <button type="submit">Login</button>
         </form>
+        
+        <!-- ✅ 카카오 로그인 버튼 -->
         <a href="/oauth/kakao/login" class="kakao-button">Login with Kakao</a>
+
+        <!-- ✅ 구글 로그인 버튼 추가 -->
+        <a href="/oauth/google/login" class="google-button">
+            <img src="/static/images/google-logo.png" alt="Google Logo" width="20">
+            Login with Google
+        </a>
+
         <div id="status"></div>
     </div>
+
     <script>
         // URL 파라미터로 로그인 상태 확인
         const params = new URLSearchParams(window.location.search);
