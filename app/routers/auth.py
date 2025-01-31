@@ -68,9 +68,8 @@ async def google_login_redirect(request: Request):
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    # ✅ 디버깅 로그 추가
-    print(f"Generated state: {state}")
-    print(f"Session stored state: {request.session.get('oauth_state')}")
+    logger.debug("Generated state: %s", state)
+    logger.debug("Session stored state: %s", request.session.get('oauth_state'))
 
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
@@ -95,7 +94,6 @@ async def google_callback(
 ):
     """Google OAuth 인증 후 Access Token 및 사용자 정보 반환"""
     try:
-        # ✅ 디버깅 로그 추가
         logger.debug("Received state from client: %s", state)
         logger.debug("Stored state in session: %s", request.session.get("oauth_state"))
 
@@ -103,13 +101,12 @@ async def google_callback(
         stored_state = request.session.pop("oauth_state", None)  # ✅ pop으로 제거
 
         if not stored_state:
-            print("❌ No state found in session!")  # 로그 추가
+            logger.error("No state found in session")
             raise HTTPException(status_code=400, detail="Invalid state parameter")
 
         if stored_state["value"] != state:
-            print(
-                f"❌ State mismatch! Stored: {stored_state['value']}, Received: {state}"
-            )
+            logger.error("State mismatch! Stored: %s, Received: %s",
+                        stored_state['value'], state)
             raise HTTPException(status_code=400, detail="Invalid state parameter")
 
         # ✅ State 생성 시간 검증 (10분 초과 시 만료)
@@ -117,10 +114,8 @@ async def google_callback(
         now = datetime.now(timezone.utc)
 
         if now - created_at > timedelta(minutes=10):
-            print("❌ State expired!")  # 로그 추가
+            logger.error("State expired!")
             raise HTTPException(status_code=400, detail="State parameter expired")
-
-        request.session.pop("oauth_state", None)
 
         # ✅ Google OAuth 로그인 처리
         result = await google_login(code, db)
