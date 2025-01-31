@@ -2,7 +2,7 @@ import secrets  # CSRF 방지를 위한 state 생성
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, logger
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -12,7 +12,7 @@ from app.auth.kakao_auth import kakao_login
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
-from app.services.jwt_service import create_access_token, decode_token
+from app.services.jwt_service import decode_token
 
 router = APIRouter()
 
@@ -96,10 +96,8 @@ async def google_callback(
     """Google OAuth 인증 후 Access Token 및 사용자 정보 반환"""
     try:
         # ✅ 디버깅 로그 추가
-        print(f"🔹 Received state from client: {state}")
-        print(
-            f"🔹 Stored state in session before validation: {request.session.get('oauth_state')}"
-        )
+        logger.debug("Received state from client: %s", state)
+        logger.debug("Stored state in session: %s", request.session.get("oauth_state"))
 
         # 🔹 세션에서 저장된 state 값을 가져옴
         stored_state = request.session.pop("oauth_state", None)  # ✅ pop으로 제거
@@ -141,8 +139,7 @@ async def google_callback(
         }
 
     except Exception as e:
-        print(f"❌ Exception occurred: {e}")  # 로그 추가
-        raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}") from e
 
 
 ### ✅ 현재 로그인한 사용자 정보 조회
