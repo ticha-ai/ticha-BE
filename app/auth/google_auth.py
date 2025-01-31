@@ -70,4 +70,4 @@ async def google_login(code: str, db: AsyncSession):
         }
 
     except Exception as e:
-        raise Exception(f"Google OAuth error: {str(e)}")
+        raise Exception(f"Google OAuth error: {str(e)}") from e
