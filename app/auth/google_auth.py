@@ -51,7 +51,7 @@ async def google_login(code: str, db: AsyncSession):
             user = User(
                 email=email,
                 name=name,
-                password="OAUTH_USER",  # ✅ 기본값 추가 (NULL 방지)
+                password=None,
                 oauth_provider="google",
                 oauth_id=user_data.get("id"),
             )
