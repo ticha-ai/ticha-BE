@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,12 +12,6 @@ class QuizCreateRequest(BaseModel):
     )
 
 
-class QuizResponse(BaseModel):
-    success: bool
-    data: "QuizData"
-    message: str
-
-
 class QuizData(BaseModel):
     chapter_id: int
     question_count: int
@@ -25,3 +19,37 @@ class QuizData(BaseModel):
     status: str
     user_id: int
     created_at: datetime
+
+
+class QuizResponse(BaseModel):
+    success: bool
+    data: QuizData
+    message: str
+
+
+class Pagination(BaseModel):
+    current_page: int
+    total_pages: int
+    limit: int
+    total_questions: int
+
+
+class Question(BaseModel):
+    question_id: int
+    image_url: str
+    choices: List[str]
+    time_spent: int
+
+
+class QuizQuestionsData(BaseModel):
+    quiz_id: int
+    title: str
+    difficulty: str
+    questions: List[Question]
+    pagination: Pagination
+
+
+class QuizQuestionsResponse(BaseModel):
+    success: bool
+    data: QuizQuestionsData
+    message: Optional[str] = None

@@ -1,13 +1,18 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.exceptions import ValidationError
 from app.core.security import get_current_user
-from app.schemas.quiz import QuizCreateRequest, QuizData, QuizResponse
-from app.services.quiz_service import create_quiz
+from app.schemas.quiz import (
+    QuizCreateRequest,
+    QuizData,
+    QuizQuestionsResponse,
+    QuizResponse,
+)
+from app.services.quiz_service import create_quiz, get_quiz_questions
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -51,3 +56,19 @@ async def create_quiz_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "SERVER_ERROR", "message": "An unexpected error occurred."},
         )
+
+
+@router.get(
+    "/quizzes/{quiz_id}/questions",
+    response_model=QuizQuestionsResponse,
+    status_code=status.HTTP_200_OK,
+)
+@router.get("/quizzes/{quiz_id}/questions")
+async def get_questions(
+    quiz_id: int, page: int, limit: int, db: AsyncSession = Depends(get_db)
+):
+    """
+    문제지의 문제 조회하는 API
+    """
+    response = await get_quiz_questions(db, quiz_id, page, limit)
+    return response
