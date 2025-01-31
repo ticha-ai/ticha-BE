@@ -1,3 +1,4 @@
+import aiohttp
 import requests
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,8 +23,9 @@ async def google_login(code: str, db: AsyncSession):
             "grant_type": "authorization_code",
         }
 
-        token_response = requests.post(token_url, data=token_data)
-        token_json = token_response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(token_url, data=token_data) as resp:
+                token_json = await resp.json()
 
         if "access_token" not in token_json:
             raise Exception("Failed to retrieve access token")
@@ -32,9 +34,10 @@ async def google_login(code: str, db: AsyncSession):
 
         # 2️⃣ 사용자 정보 요청
         user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-        headers = {"Authorization": f"Bearer {access_token}"}
-        user_response = requests.get(user_info_url, headers=headers)
-        user_data = user_response.json()
+        async with session.get(
+            user_info_url, headers={"Authorization": f"Bearer {access_token}"}
+        ) as resp:
+            user_data = await resp.json()
 
         # 3️⃣ 사용자 정보 확인 및 저장
         email = user_data.get("email")
