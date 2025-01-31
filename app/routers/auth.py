@@ -69,7 +69,7 @@ async def google_login_redirect(request: Request):
     }
 
     logger.debug("Generated state: %s", state)
-    logger.debug("Session stored state: %s", request.session.get('oauth_state'))
+    logger.debug("Session stored state: %s", request.session.get("oauth_state"))
 
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
@@ -105,8 +105,9 @@ async def google_callback(
             raise HTTPException(status_code=400, detail="Invalid state parameter")
 
         if stored_state["value"] != state:
-            logger.error("State mismatch! Stored: %s, Received: %s",
-                        stored_state['value'], state)
+            logger.error(
+                "State mismatch! Stored: %s, Received: %s", stored_state["value"], state
+            )
             raise HTTPException(status_code=400, detail="Invalid state parameter")
 
         # ✅ State 생성 시간 검증 (10분 초과 시 만료)
