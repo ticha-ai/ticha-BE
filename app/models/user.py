@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Integer, String
+from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Column, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, BaseTimestamp
@@ -26,7 +26,10 @@ class User(Base, BaseTimestamp):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # ✅ password 필드를 nullable=True로 변경 (OAuth 사용자는 NULL)
+    password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     oauth_provider: Mapped[str | None] = mapped_column(String(50), nullable=True)
     oauth_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     refresh_token: Mapped[str | None] = mapped_column(String(500), nullable=True)

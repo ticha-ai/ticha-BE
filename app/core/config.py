@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     KAKAO_CLIENT_SECRET: str
     KAKAO_REDIRECT_URI: str  # 리다이렉트 URI 반영
 
+    # 구글 API 환경 변수
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+
     # JWT 환경 변수
     SECRET_KEY: str
     ALGORITHM: str
