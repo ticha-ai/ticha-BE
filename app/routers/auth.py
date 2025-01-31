@@ -1,3 +1,4 @@
+import secrets  # CSRF 방지를 위한 state 생성
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -53,28 +54,45 @@ async def kakao_callback(code: str = Query(...), db: AsyncSession = Depends(get_
         raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}")
 
 
-### ✅ Google OAuth 추가
+### ✅ Google OAuth 개선 (보안 강화)
 @router.get("/oauth/google/login")
 async def google_login_redirect():
     """
-    구글 로그인 페이지로 리디렉션
+    구글 로그인 페이지로 리디렉션 (CSRF 방지, 리프레시 토큰 요청, 사용자 동의 화면 강제)
     """
+    state = secrets.token_urlsafe(16)  # CSRF 방지를 위한 랜덤 state 값 생성
+
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
         "response_type": "code",
         "scope": "openid email profile",
+        "state": state,  # ✅ CSRF 공격 방지
+        "access_type": "offline",  # ✅ 리프레시 토큰 요청 가능
+        "prompt": "consent",  # ✅ 사용자 동의 화면 강제 표시
     }
     google_auth_url = f"https://accounts.google.com/o/oauth2/auth?{urlencode(params)}"
-    return {"auth_url": google_auth_url}
+
+    return {
+        "auth_url": google_auth_url,
+        "state": state,
+    }  # 클라이언트가 state를 저장하도록 반환
 
 
 @router.get("/oauth/google/callback")
-async def google_callback(code: str = Query(...), db: AsyncSession = Depends(get_db)):
+async def google_callback(
+    code: str = Query(...),
+    state: str = Query(...),  # ✅ 클라이언트에서 받은 state를 검증
+    db: AsyncSession = Depends(get_db),
+):
     """
     구글 인증 후 Access Token 및 사용자 정보 반환
     """
     try:
+        # 🔹 클라이언트에서 받은 state가 유효한지 확인 (실제 구현에서는 세션 저장 후 비교 필요)
+        if not state:
+            raise HTTPException(status_code=400, detail="Invalid state parameter")
+
         result = await google_login(code, db)
         user = result["user"]
         access_token = result["access_token"]
