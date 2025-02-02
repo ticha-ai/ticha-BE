@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -63,7 +63,6 @@ async def create_quiz_endpoint(
     response_model=QuizQuestionsResponse,
     status_code=status.HTTP_200_OK,
 )
-@router.get("/quizzes/{quiz_id}/questions")
 async def get_questions(
     quiz_id: int, page: int, limit: int, db: AsyncSession = Depends(get_db)
 ):

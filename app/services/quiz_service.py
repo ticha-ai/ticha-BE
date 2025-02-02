@@ -61,12 +61,17 @@ async def create_quiz(
             )
 
         # 문제 가져오기 (해당 단원 + 난이도)
-        problem_query = await db.execute(
-            select(Problem).where(
-                Problem.chapter_id == quiz_in.chapter_id,
-                Problem.difficulty == quiz_in.difficulty,
+        if quiz_in.difficulty == "random":
+            problem_query = await db.execute(
+                select(Problem).where(Problem.chapter_id == quiz_in.chapter_id)
             )
-        )
+        else:
+            problem_query = await db.execute(
+                select(Problem).where(
+                    Problem.chapter_id == quiz_in.chapter_id,
+                    Problem.difficulty == quiz_in.difficulty,
+                )
+            )
         problems = problem_query.scalars().all()
 
         # 문제 개수 부족하면 오류 발생

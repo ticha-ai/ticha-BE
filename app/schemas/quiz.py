@@ -37,8 +37,7 @@ class Pagination(BaseModel):
 class Question(BaseModel):
     question_id: int
     image_url: str
-    choices: List[str]
-    time_spent: int
+    choices: List[int]
 
 
 class QuizQuestionsData(BaseModel):

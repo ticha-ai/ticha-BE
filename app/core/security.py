@@ -1,7 +1,5 @@
 from typing import Dict
 
-from fastapi import Depends
-
 
 # mock data
 def get_current_user() -> Dict:
