@@ -27,7 +27,7 @@ class Quiz(Base, BaseTimestamp):
     )
     total_problems_count: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum("in_progress", "graded", "reviewed"), nullable=False
+        Enum("in_progress", "graded", "reviewed"), nullable=False, default="in_progress"
     )
     chapter_id: Mapped[int] = mapped_column(ForeignKey("chapters.id"), nullable=False)
 
