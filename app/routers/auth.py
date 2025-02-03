@@ -1,8 +1,9 @@
+import logging
 import secrets  # CSRF 방지를 위한 state 생성
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, logger
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -16,13 +17,16 @@ from app.services.jwt_service import decode_token
 
 router = APIRouter()
 
+# ✅ 로거 설정 (중복 적용 방지)
+logger = logging.getLogger(__name__)
+if not logger.hasHandlers():
+    logging.basicConfig(level=logging.DEBUG)
+
 
 ### ✅ Kakao OAuth
 @router.get("/oauth/kakao/login")
 async def kakao_login_redirect():
-    """
-    카카오 로그인 페이지로 리디렉션
-    """
+    """카카오 로그인 페이지로 리디렉션"""
     params = {
         "client_id": settings.KAKAO_CLIENT_ID,
         "redirect_uri": settings.KAKAO_REDIRECT_URI,
@@ -34,9 +38,7 @@ async def kakao_login_redirect():
 
 @router.get("/oauth/kakao/callback")
 async def kakao_callback(code: str = Query(...), db: AsyncSession = Depends(get_db)):
-    """
-    카카오 인증 후 Access Token 및 사용자 정보 반환
-    """
+    """카카오 인증 후 Access Token 및 사용자 정보 반환"""
     try:
         result = await kakao_login(code, db)
         user = result["user"]
@@ -53,6 +55,7 @@ async def kakao_callback(code: str = Query(...), db: AsyncSession = Depends(get_
             "refresh_token": refresh_token,
         }
     except Exception as e:
+        logger.error(f"Kakao login failed: {e}")
         raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}")
 
 
@@ -61,15 +64,14 @@ async def kakao_callback(code: str = Query(...), db: AsyncSession = Depends(get_
 async def google_login_redirect(request: Request):
     """구글 로그인 페이지로 리디렉션"""
 
-    state = secrets.token_urlsafe(32)  # 랜덤 state 값 생성
-
+    state = secrets.token_urlsafe(32)  # ✅ state 값 생성
     request.session["oauth_state"] = {
         "value": state,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    logger.debug("Generated state: %s", state)
-    logger.debug("Session stored state: %s", request.session.get("oauth_state"))
+    logger.debug(f"Generated state: {state}")
+    logger.debug(f"Session stored state: {request.session.get('oauth_state')}")
 
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
@@ -94,10 +96,7 @@ async def google_callback(
 ):
     """Google OAuth 인증 후 Access Token 및 사용자 정보 반환"""
     try:
-        logger.debug("Received state from client: %s", state)
-        logger.debug("Stored state in session: %s", request.session.get("oauth_state"))
-
-        # 🔹 세션에서 저장된 state 값을 가져옴
+        logger.debug(f"Received state from client: {state}")
         stored_state = request.session.pop("oauth_state", None)  # ✅ pop으로 제거
 
         if not stored_state:
@@ -106,7 +105,7 @@ async def google_callback(
 
         if stored_state["value"] != state:
             logger.error(
-                "State mismatch! Stored: %s, Received: %s", stored_state["value"], state
+                f"State mismatch! Stored: {stored_state['value']}, Received: {state}"
             )
             raise HTTPException(status_code=400, detail="Invalid state parameter")
 
@@ -135,15 +134,14 @@ async def google_callback(
         }
 
     except Exception as e:
+        logger.error(f"Google login failed: {e}")
         raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}") from e
 
 
 ### ✅ 현재 로그인한 사용자 정보 조회
 @router.get("/api/user/me")
 async def get_current_user(token: str = Query(...), db: AsyncSession = Depends(get_db)):
-    """
-    현재 사용자 정보 반환 (Access Token 사용)
-    """
+    """현재 사용자 정보 반환 (Access Token 사용)"""
     try:
         payload = decode_token(token)
         user_id = payload.get("user_id")
@@ -160,4 +158,5 @@ async def get_current_user(token: str = Query(...), db: AsyncSession = Depends(g
             "email": user.email,
         }
     except Exception as e:
+        logger.error(f"Token validation failed: {e}")
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
