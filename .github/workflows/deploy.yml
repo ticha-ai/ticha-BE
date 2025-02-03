@@ -3,8 +3,8 @@ name: Deploy to AWS EC2
 on:
   push:
     branches:
-      - main  # main 브랜치에 push 시 배포
-      - dev   # dev 브랜치에도 배포 추가
+      - main
+      - dev
 
 jobs:
   deploy:
@@ -17,16 +17,15 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa  # 개행 문자 제거
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          
-      - name: Deploy to EC2
+
+      - name: Deploy to EC2 (Ubuntu)
         run: |
-          ssh ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-          cd ~/fastapi-app  # 프로젝트 폴더로 이동
-          git pull origin $(git rev-parse --abbrev-ref HEAD)  # 현재 브랜치에서 최신 코드 가져오기
+          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          cd ~/fastapi-app  # 프로젝트 폴더 이동
+          git pull origin $(git rev-parse --abbrev-ref HEAD)  # 현재 브랜치 최신 코드 가져오기
           docker-compose down  # 기존 컨테이너 중지
           docker-compose up -d --build  # 새 컨테이너 실행
           EOF
