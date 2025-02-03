@@ -24,6 +24,9 @@ python-jose = "^3.3.0"
 python-multipart = "^0.0.20"
 pyjwt = "^2.10.1"
 faker = "^35.0.0"
+requests = "^2.32.3"
+aiohttp = "^3.11.11"
+itsdangerous = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
