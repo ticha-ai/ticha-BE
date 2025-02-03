@@ -3,8 +3,8 @@ name: Deploy to AWS EC2
 on:
   push:
     branches:
-      - main  # main 브랜치에 push 시 배포
-      - dev   # dev 브랜치에도 배포 추가
+      - main
+      - dev  # dev 브랜치에도 자동 배포
 
 jobs:
   deploy:
@@ -17,16 +17,23 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa  # 개행 문자 제거
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          
+
       - name: Deploy to EC2 (Ubuntu)
         run: |
           ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          cd ~/fastapi-app  # 프로젝트 폴더로 이동
-          git pull origin $(git rev-parse --abbrev-ref HEAD)  # 현재 브랜치에서 최신 코드 가져오기
-          docker-compose down  # 기존 컨테이너 중지
-          docker-compose up -d --build  # 새 컨테이너 실행
+          # 프로젝트 폴더가 없으면 Git 클론
+          if [ ! -d "~/ticha-BE" ]; then
+            git clone https://github.com/ticha-ai/ticha-BE.git ~/ticha-BE
+          fi
+
+          cd ~/ticha-BE
+          git reset --hard  # 변경 사항 초기화
+          git pull origin $(git rev-parse --abbrev-ref HEAD)  # 현재 브랜치 최신 코드 가져오기
+
+          # Docker Compose 실행
+          docker-compose down
+          docker-compose up -d --build
           EOF
