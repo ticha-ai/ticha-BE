@@ -28,9 +28,30 @@ jobs:
           git reset --hard
           git pull origin $(git rev-parse --abbrev-ref HEAD)
 
-          # ✅ 배포 환경에서 .env 수정
-          sed -i 's/MYSQL_HOST=127.0.0.1/MYSQL_HOST=db/' .env
-          sed -i 's/ENV=development/ENV=production/' .env
+          # ✅ EC2에 .env 파일 생성 (GitHub Secrets에서 값 가져오기)
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" > .env
+          echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
+          echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
+          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+          echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
+          echo "MYSQL_HOST=db" >> .env  # 배포 환경에서는 MySQL 컨테이너 사용
+
+          # ✅ 카카오 OAuth 설정
+          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env
+          echo "KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}" >> .env
+          echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env
+
+          # ✅ 구글 OAuth 설정
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+
+          # ✅ JWT 설정
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> .env
+
+          # ✅ 환경설정
+          echo "ENV=production" >> .env  # 배포 환경에서는 production
 
           # ✅ 변경된 .env 파일 확인
           cat .env
