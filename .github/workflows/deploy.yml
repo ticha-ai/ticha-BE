@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - dev  # dev 브랜치에도 자동 배포
+      - dev
 
 jobs:
   deploy:
@@ -17,23 +17,25 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa  # 개행 문자 제거
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to EC2 (Ubuntu)
+      - name: Deploy to EC2
         run: |
           ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          # 프로젝트 폴더가 없으면 Git 클론
-          if [ ! -d "~/ticha-BE" ]; then
-            git clone https://github.com/ticha-ai/ticha-BE.git ~/ticha-BE
-          fi
-
           cd ~/ticha-BE
-          git reset --hard  # 변경 사항 초기화
-          git pull origin $(git rev-parse --abbrev-ref HEAD)  # 현재 브랜치 최신 코드 가져오기
+          git reset --hard
+          git pull origin $(git rev-parse --abbrev-ref HEAD)
 
-          # Docker Compose 실행
-          docker-compose down
-          docker-compose up -d --build
+          # ✅ 배포 환경에서 .env 수정
+          sed -i 's/MYSQL_HOST=127.0.0.1/MYSQL_HOST=db/' .env
+          sed -i 's/ENV=development/ENV=production/' .env
+
+          # ✅ 변경된 .env 파일 확인
+          cat .env
+
+          # ✅ FastAPI 서버 실행 (기존 프로세스 중지 후 재시작)
+          pkill -f "uvicorn" || true  # 기존 uvicorn 프로세스 종료
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 > fastapi.log 2>&1 &
           EOF
