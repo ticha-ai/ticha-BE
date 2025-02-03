@@ -22,9 +22,9 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           
-      - name: Deploy to EC2
+      - name: Deploy to EC2 (Ubuntu)
         run: |
-          ssh ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
           cd ~/fastapi-app  # 프로젝트 폴더로 이동
           git pull origin $(git rev-parse --abbrev-ref HEAD)  # 현재 브랜치에서 최신 코드 가져오기
           docker-compose down  # 기존 컨테이너 중지
