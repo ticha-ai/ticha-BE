@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings  # ✅ 환경 변수 설정 가져오기
-from app.routers import auth, pages, quiz
+from app.routers import answer, auth, pages, quiz
 
 app = FastAPI()
 
@@ -24,6 +24,7 @@ app.mount("/static", StaticFiles(directory="app/static", html=True), name="stati
 app.include_router(auth.router, tags=["auth"])
 app.include_router(pages.router, tags=["pages"])
 app.include_router(quiz.router, prefix="/api/v1", tags=["quizzes"])
+app.include_router(answer.router, prefix="/api/v1", tags=["answers"])
 
 
 @app.get("/")
