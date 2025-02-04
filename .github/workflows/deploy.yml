@@ -28,52 +28,43 @@ jobs:
           git reset --hard
           git pull origin $(git rev-parse --abbrev-ref HEAD)
 
-          # ✅ PATH 환경 변수 수동 설정 (필수)
+          # ✅ 기본 명령어 실행 가능하도록 PATH 설정
           export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
-          # ✅ Poetry 가상환경 활성화
-          export PATH="$HOME/.local/bin:$PATH"
-          export POETRY_HOME="$HOME/.poetry"
-          export VIRTUAL_ENV="\$(poetry env info --path)"
-          export PATH="\$VIRTUAL_ENV/bin:\$PATH"
-
-          # ✅ Poetry 가상환경 적용 (확실하게)
-          source "\$VIRTUAL_ENV/bin/activate"
+          # ✅ Poetry 가상환경이 없으면 생성
+          if ! poetry env info --path &>/dev/null; then
+            echo "Poetry environment not found. Installing dependencies..."
+            poetry install
+          fi
 
           # ✅ 명령어 확인 (디버깅용)
           echo "Checking commands..."
-          which cat
-          which pkill
-          which sleep
-          which ps
-          which grep
+          which cat || echo "cat not found"
+          which pkill || echo "pkill not found"
+          which sleep || echo "sleep not found"
+          which ps || echo "ps not found"
+          which grep || echo "grep not found"
 
           # ✅ EC2에 .env 파일 생성 (GitHub Secrets에서 값 가져오기)
-          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" > .env
-          echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
-          echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
-          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-          echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
-          echo "MYSQL_HOST=db" >> .env  # 배포 환경에서는 MySQL 컨테이너 사용
+          cat <<EOT > .env
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+          MYSQL_HOST=db
+          KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}
+          KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ALGORITHM=${{ secrets.ALGORITHM }}
+          ENV=production
+          EOT
 
-          # ✅ 카카오 OAuth 설정
-          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env
-          echo "KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}" >> .env
-          echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env
-
-          # ✅ 구글 OAuth 설정
-          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
-          echo "GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}" >> .env
-          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
-
-          # ✅ JWT 설정
-          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
-          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> .env
-
-          # ✅ 환경설정
-          echo "ENV=production" >> .env  # 배포 환경에서는 production
-
-          # ✅ 변경된 .env 파일 확인
+          # ✅ .env 파일 확인
           cat .env
 
           # ✅ 실행 중인 FastAPI 서버 종료
