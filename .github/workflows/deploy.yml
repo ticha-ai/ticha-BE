@@ -24,7 +24,23 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh ubuntu@${{ secrets.EC2_HOST }} /bin/bash << 'EOF'
+          
+          # ✅ Git 설치 확인 후, 없으면 설치
+          if ! command -v git &>/dev/null; then
+            echo "Git not found. Installing..."
+            sudo apt update && sudo apt install -y git
+          fi
+
+          # ✅ GitHub SSH 키 추가 (최초 1회)
+          if [ ! -d "~/ticha-BE" ]; then
+            echo "Repository not found. Cloning for the first time..."
+            git clone git@github.com:ticha-ai/ticha-BE.git ~/ticha-BE
+          fi
+
+          # ✅ 저장소 이동
           cd ~/ticha-BE
+
+          # ✅ 최신 코드 가져오기
           git reset --hard
           git pull origin $(git rev-parse --abbrev-ref HEAD)
 
