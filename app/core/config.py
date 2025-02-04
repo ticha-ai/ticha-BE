@@ -27,9 +27,7 @@ class Settings(BaseSettings):
     )  # 로컬(Docker)은 3309, 배포(RDS)는 3306
 
     MYSQL_HOST: str = (
-        "host.docker.internal"
-        if ENV == "development"
-        else os.getenv("MYSQL_HOST", "127.0.0.1")
+        "host.docker.internal" if ENV == "development" else os.getenv("MYSQL_HOST")
     )  # 로컬은 Docker 내부 접근, 배포는 RDS 주소 사용
 
     # 카카오 API 환경 변수
