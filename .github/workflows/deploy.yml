@@ -28,11 +28,25 @@ jobs:
           git reset --hard
           git pull origin $(git rev-parse --abbrev-ref HEAD)
 
+          # ✅ PATH 환경 변수 수동 설정 (필수)
+          export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
           # ✅ Poetry 가상환경 활성화
           export PATH="$HOME/.local/bin:$PATH"
           export POETRY_HOME="$HOME/.poetry"
           export VIRTUAL_ENV="\$(poetry env info --path)"
           export PATH="\$VIRTUAL_ENV/bin:\$PATH"
+
+          # ✅ Poetry 가상환경 적용 (확실하게)
+          source "\$VIRTUAL_ENV/bin/activate"
+
+          # ✅ 명령어 확인 (디버깅용)
+          echo "Checking commands..."
+          which cat
+          which pkill
+          which sleep
+          which ps
+          which grep
 
           # ✅ EC2에 .env 파일 생성 (GitHub Secrets에서 값 가져오기)
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" > .env
