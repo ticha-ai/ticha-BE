@@ -1,5 +1,7 @@
 import httpx
 
+from app.core.config import settings  # Assuming settings is defined in app.config
+
 
 async def get_kakao_access_token(code: str, client_id: str, redirect_uri: str) -> str:
     """
@@ -12,6 +14,7 @@ async def get_kakao_access_token(code: str, client_id: str, redirect_uri: str) -
         "client_id": client_id,
         "redirect_uri": redirect_uri,
         "code": code,
+        "client_secret": settings.KAKAO_CLIENT_SECRET,  # 🔹 추가된 부분
     }
 
     async with httpx.AsyncClient() as client:
