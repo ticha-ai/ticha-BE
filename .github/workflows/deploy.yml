@@ -28,6 +28,12 @@ jobs:
           git reset --hard
           git pull origin $(git rev-parse --abbrev-ref HEAD)
 
+          # ✅ Poetry 가상환경 활성화
+          export PATH="$HOME/.local/bin:$PATH"
+          export POETRY_HOME="$HOME/.poetry"
+          export VIRTUAL_ENV="\$(poetry env info --path)"
+          export PATH="\$VIRTUAL_ENV/bin:\$PATH"
+
           # ✅ EC2에 .env 파일 생성 (GitHub Secrets에서 값 가져오기)
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" > .env
           echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
@@ -56,7 +62,13 @@ jobs:
           # ✅ 변경된 .env 파일 확인
           cat .env
 
-          # ✅ FastAPI 서버 실행 (기존 프로세스 중지 후 재시작)
+          # ✅ 실행 중인 FastAPI 서버 종료
           pkill -f "uvicorn" || true  # 기존 uvicorn 프로세스 종료
-          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 > fastapi.log 2>&1 &
+
+          # ✅ FastAPI 서버 실행 (Poetry 환경 적용)
+          nohup poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 > fastapi.log 2>&1 &
+
+          # ✅ 실행 상태 확인
+          sleep 5  # 서버가 제대로 실행될 시간을 줌
+          ps aux | grep uvicorn
           EOF
