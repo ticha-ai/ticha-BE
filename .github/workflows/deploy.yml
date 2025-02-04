@@ -23,7 +23,7 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ubuntu@${{ secrets.EC2_HOST }} /bin/bash << 'EOF'
           cd ~/ticha-BE
           git reset --hard
           git pull origin $(git rev-parse --abbrev-ref HEAD)
@@ -69,6 +69,6 @@ jobs:
           nohup poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 > fastapi.log 2>&1 &
 
           # ✅ 실행 상태 확인
-          sleep 5  # 서버가 제대로 실행될 시간을 줌
+          sleep 5
           ps aux | grep uvicorn
           EOF
