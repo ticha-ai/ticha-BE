@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -15,6 +16,16 @@ app.add_middleware(
     same_site="lax",
     https_only=False,
     max_age=3600,
+)
+
+# ✅ CORS 미들웨어 추가 (모든 도메인 허용)
+# TODO: 배포 시에 도메인을 명시적으로 설정해야 함
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Static files
