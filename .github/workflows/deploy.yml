@@ -67,7 +67,7 @@ jobs:
           MYSQL_USER=${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
           MYSQL_PORT=${{ secrets.MYSQL_PORT }}
-          MYSQL_HOST=db
+          MYSQL_HOST=${{ secrets.MYSQL_HOST }}
           KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
           KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}
           KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
