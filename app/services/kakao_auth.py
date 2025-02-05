@@ -1,6 +1,7 @@
 import logging
 
 import httpx
+from fastapi import HTTPException
 
 from app.core.config import settings  # Assuming settings is defined in app.config
 
