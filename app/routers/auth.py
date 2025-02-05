@@ -33,7 +33,7 @@ async def kakao_login_redirect():
         "response_type": "code",
     }
     kakao_auth_url = f"https://kauth.kakao.com/oauth/authorize?{urlencode(params)}"
-    return {"auth_url": kakao_auth_url}
+    return RedirectResponse(url=kakao_auth_url)
 
 
 @router.get("/oauth/kakao/callback")
