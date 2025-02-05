@@ -23,19 +23,69 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ubuntu@${{ secrets.EC2_HOST }} /bin/bash << 'EOF'
+          
+          # ✅ Git 설치 확인 후, 없으면 설치
+          if ! command -v git &>/dev/null; then
+            echo "Git not found. Installing..."
+            sudo apt update && sudo apt install -y git
+          fi
+
+          # ✅ GitHub SSH 키 추가 (최초 1회)
+          if [ ! -d "~/ticha-BE" ]; then
+            echo "Repository not found. Cloning for the first time..."
+            git clone git@github.com:ticha-ai/ticha-BE.git ~/ticha-BE
+          fi
+
+          # ✅ 저장소 이동
           cd ~/ticha-BE
+
+          # ✅ 최신 코드 가져오기
           git reset --hard
           git pull origin $(git rev-parse --abbrev-ref HEAD)
 
-          # ✅ 배포 환경에서 .env 수정
-          sed -i 's/MYSQL_HOST=127.0.0.1/MYSQL_HOST=db/' .env
-          sed -i 's/ENV=development/ENV=production/' .env
+          # ✅ Poetry PATH 설정 (자동 배포에서 인식할 수 있도록)
+          export PATH="$HOME/.local/bin:$PATH"
 
-          # ✅ 변경된 .env 파일 확인
-          cat .env
+          # ✅ Poetry 설치 여부 확인 후, 없으면 설치
+          if ! command -v poetry &>/dev/null; then
+            echo "Poetry not found. Installing Poetry..."
+            curl -sSL https://install.python-poetry.org | python3 -
+            export PATH="$HOME/.local/bin:$PATH"  # 설치 후에도 PATH 다시 설정
+          fi
 
-          # ✅ FastAPI 서버 실행 (기존 프로세스 중지 후 재시작)
+          # ✅ Poetry 가상환경이 없으면 생성
+          if ! poetry env info --path &>/dev/null; then
+            echo "Poetry environment not found. Installing dependencies..."
+            poetry install
+          fi
+
+          # ✅ EC2에 .env 파일 생성 (GitHub Secrets에서 값 가져오기)
+          cat <<EOT > .env
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+          MYSQL_HOST=${{ secrets.MYSQL_HOST }}
+          KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}
+          KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ALGORITHM=${{ secrets.ALGORITHM }}
+          ENV=production
+          EOT
+
+          # ✅ 실행 중인 FastAPI 서버 종료
           pkill -f "uvicorn" || true  # 기존 uvicorn 프로세스 종료
-          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 > fastapi.log 2>&1 &
+
+          # ✅ FastAPI 서버 실행 (Poetry 환경 적용)
+          nohup poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 > fastapi.log 2>&1 &
+
+          # ✅ 실행 상태 확인
+          sleep 5
+          ps aux | grep uvicorn
           EOF

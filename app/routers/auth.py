@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -13,7 +13,11 @@ from app.auth.kakao_auth import kakao_login
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
-from app.services.jwt_service import decode_token
+from app.services.jwt_service import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+)
 
 router = APIRouter()
 
@@ -24,6 +28,7 @@ if not logger.hasHandlers():
 
 
 ### ✅ Kakao OAuth
+### TODO: 삭제필요
 @router.get("/oauth/kakao/login")
 async def kakao_login_redirect():
     """카카오 로그인 페이지로 리디렉션"""
@@ -33,27 +38,38 @@ async def kakao_login_redirect():
         "response_type": "code",
     }
     kakao_auth_url = f"https://kauth.kakao.com/oauth/authorize?{urlencode(params)}"
-    return {"auth_url": kakao_auth_url}
+    return RedirectResponse(url=kakao_auth_url)
 
 
-@router.get("/oauth/kakao/callback")
-async def kakao_callback(code: str = Query(...), db: AsyncSession = Depends(get_db)):
-    """카카오 인증 후 Access Token 및 사용자 정보 반환"""
+@router.post("/oauth/kakao/callback")
+async def kakao_callback(data: dict, db: AsyncSession = Depends(get_db)):
+    """
+    프론트에서 받은 카카오 인가코드를 사용해 로그인 또는 회원가입 처리
+    """
+    code = data.get("code")  # ✅ 프론트에서 전달한 인가코드
+    if not code:
+        raise HTTPException(status_code=400, detail="Authorization code is required")
+
     try:
         result = await kakao_login(code, db)
         user = result["user"]
-        access_token = result["access_token"]
-        refresh_token = result["refresh_token"]
+        access_token = create_access_token(
+            data={"user_id": user.id}, expires_delta=timedelta(minutes=30)
+        )
+        refresh_token = create_refresh_token(data={"user_id": user.id})
 
-        return {
-            "user": {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-            },
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-        }
+        return JSONResponse(
+            content={
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                },
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+            }
+        )
+
     except Exception as e:
         logger.error(f"Kakao login failed: {e}")
         raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}")
