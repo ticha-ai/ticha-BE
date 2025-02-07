@@ -52,17 +52,17 @@ async def kakao_login_redirect():
 
 @router.post("/oauth/kakao/token")
 async def kakao_token_exchange(
-    code: str = Query(..., description="OAuth Authorization Code"),
+    request: KakaoTokenRequest,  # ✅ `code`를 Body에서 받음
     db: AsyncSession = Depends(get_db),
 ):
     """카카오 OAuth 인증 후 서비스 자체 JWT 발급"""
-    if not code:
+    if not request.code:
         raise HTTPException(status_code=400, detail="Authorization code is required")
 
     try:
         # ✅ 1. 카카오 서버에서 액세스 토큰 요청
         kakao_token_response = await get_kakao_access_token(
-            code=code,
+            code=request.code,  # ✅ 이제 request.code로 가져옴
             redirect_uri=settings.KAKAO_REDIRECT_URI,
             client_id=settings.KAKAO_CLIENT_ID,
             client_secret=settings.KAKAO_CLIENT_SECRET,
