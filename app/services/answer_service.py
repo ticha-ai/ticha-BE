@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import ValidationError
 from app.models import AnswerSheet, Quiz, UserAnswer
@@ -173,3 +174,18 @@ class AnswerService:
         except SQLAlchemyError as e:
             logger.error(f"Database error in saving answers: {e}", exc_info=True)
             raise
+
+    async def get_answer_sheet_by_id(self, answersheet_id: int) -> AnswerSheet:
+        query = (
+            select(AnswerSheet)
+            .options(selectinload(AnswerSheet.user_answers))
+            .where(AnswerSheet.id == answersheet_id)
+        )
+
+        result = await self.db.execute(query)
+        answer_sheet = result.scalar_one_or_none()
+        if not answer_sheet:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Answer sheet not found"
+            )
+        return answer_sheet
