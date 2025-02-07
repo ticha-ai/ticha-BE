@@ -3,7 +3,7 @@ import secrets  # CSRF 방지를 위한 state 생성
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -18,6 +18,8 @@ from app.services.jwt_service import (
     create_refresh_token,
     decode_token,
 )
+from app.services.kakao_service import get_kakao_access_token, get_kakao_user_info
+from app.services.user_service import find_or_create_kakao_user
 
 router = APIRouter()
 
@@ -42,31 +44,117 @@ async def kakao_login_redirect():
     return {"login_url": kakao_auth_url}  # ✅ JSON 응답 반환
 
 
-from urllib.parse import quote
-
-
-@router.get("/oauth/kakao/callback")
-async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
-    """카카오 OAuth 인증 후 프론트엔드로 리디렉션"""
+@router.post("/oauth/kakao/token")
+async def kakao_token_exchange(
+    code: str = Query(..., description="OAuth Authorization Code"),
+    db: AsyncSession = Depends(get_db),
+):
+    """카카오 OAuth 인증 후 서비스 자체 JWT 발급"""
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code is required")
 
     try:
-        result = await kakao_login(code, db)
-        access_token = result["access_token"]
-        refresh_token = result["refresh_token"]
+        # ✅ 1. 카카오 서버에서 액세스 토큰 요청
+        kakao_token_response = await get_kakao_access_token(
+            code=code,
+            redirect_uri=settings.KAKAO_REDIRECT_URI,
+            client_id=settings.KAKAO_CLIENT_ID,
+            client_secret=settings.KAKAO_CLIENT_SECRET,
+        )
 
-        # ✅ URL 인코딩 적용
-        encoded_access_token = quote(access_token)
-        encoded_refresh_token = quote(refresh_token)
+        kakao_access_token = kakao_token_response.get("access_token")
+        kakao_refresh_token = kakao_token_response.get(
+            "refresh_token"
+        )  # ✅ `None`일 수도 있음
 
-        # ✅ 리디렉션 URL에 인코딩된 토큰 추가
-        redirect_url = f"{settings.KAKAO_REDIRECT_URI}?token={encoded_access_token}&refresh={encoded_refresh_token}"
-        return RedirectResponse(url=redirect_url)
+        if not kakao_access_token:
+            raise HTTPException(
+                status_code=400, detail="Invalid access token from Kakao"
+            )
+
+        # ✅ 2. 카카오 API에서 사용자 정보 가져오기
+        kakao_user_info = await get_kakao_user_info(kakao_access_token)
+
+        # ✅ 3. 사용자 확인 및 refresh_token 저장 (`refresh_token`이 없으면 기존 값 유지)
+        user = await find_or_create_kakao_user(kakao_user_info, kakao_refresh_token, db)
+
+        # ✅ 4. 서비스 자체 JWT 발급
+        service_access_token = create_access_token(data={"user_id": user.id})
+        service_refresh_token = create_refresh_token(data={"user_id": user.id})
+
+        return {
+            "access_token": service_access_token,
+            "refresh_token": service_refresh_token,
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "profile_image": user.profile_image,
+            },
+            "message": "Login successful",
+        }
 
     except Exception as e:
-        logger.error(f"Kakao login failed: {e}")
-        raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}")
+        logger.error(f"Kakao OAuth processing error: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.get("/oauth/kakao/callback")
+async def kakao_callback(
+    code: str = Query(..., description="OAuth Authorization Code"),
+    db: AsyncSession = Depends(get_db),
+):
+    """카카오 OAuth 인증 후 JWT 발급"""
+    if not code:
+        raise HTTPException(status_code=400, detail="Authorization code is required")
+
+    try:
+        # ✅ 1. 카카오 서버에서 액세스 토큰 받아오기
+        kakao_token_response = await get_kakao_access_token(
+            code=code,
+            redirect_uri=settings.KAKAO_REDIRECT_URI,
+            client_id=settings.KAKAO_CLIENT_ID,
+            client_secret=settings.KAKAO_CLIENT_SECRET,
+        )
+
+        # 🚨 디버깅: 카카오에서 받은 토큰 확인
+        print("🔹 Kakao Token Response:", kakao_token_response)
+
+        # ✅ 2. 카카오 API에서 사용자 정보 가져오기
+        kakao_access_token = kakao_token_response.get("access_token")
+        kakao_refresh_token = kakao_token_response.get(
+            "refresh_token"
+        )  # ✅ `None`일 수도 있음
+
+        if not kakao_access_token:
+            raise HTTPException(
+                status_code=400, detail="Failed to retrieve access token"
+            )
+
+        kakao_user_info = await get_kakao_user_info(kakao_access_token)
+
+        # 🚨 디버깅: 사용자 정보 확인
+        print("🔹 Kakao User Info:", kakao_user_info)
+
+        # ✅ 3. 서비스 DB에서 사용자 확인 또는 신규 회원가입 처리
+        user = await find_or_create_kakao_user(kakao_user_info, kakao_refresh_token, db)
+
+        # 🚨 디버깅: 사용자 정보 확인
+        print("🔹 Found or Created User:", user.id)
+
+        # ✅ 4. 서비스 자체 JWT 발급
+        service_access_token = create_access_token(data={"user_id": user.id})
+        service_refresh_token = create_refresh_token(data={"user_id": user.id})
+
+        return {
+            "access_token": service_access_token,
+            "refresh_token": service_refresh_token,
+            "message": "Login successful",
+        }
+
+    except Exception as e:
+        print(f"🔺 Error occurred: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 ### ✅ Google OAuth 개선 (보안 강화)
