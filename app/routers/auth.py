@@ -31,14 +31,15 @@ if not logger.hasHandlers():
 ### TODO: 삭제필요
 @router.get("/oauth/kakao/login")
 async def kakao_login_redirect():
-    """카카오 로그인 페이지로 리디렉션"""
+    """카카오 로그인 URL을 JSON 응답으로 반환"""
     params = {
         "client_id": settings.KAKAO_CLIENT_ID,
         "redirect_uri": settings.KAKAO_REDIRECT_URI,
         "response_type": "code",
     }
     kakao_auth_url = f"https://kauth.kakao.com/oauth/authorize?{urlencode(params)}"
-    return RedirectResponse(url=kakao_auth_url)
+
+    return {"login_url": kakao_auth_url}  # ✅ JSON 응답 반환
 
 
 from urllib.parse import quote
