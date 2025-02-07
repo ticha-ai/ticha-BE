@@ -41,6 +41,9 @@ async def kakao_login_redirect():
     return RedirectResponse(url=kakao_auth_url)
 
 
+from urllib.parse import quote
+
+
 @router.get("/oauth/kakao/callback")
 async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
     """카카오 OAuth 인증 후 프론트엔드로 리디렉션"""
@@ -52,8 +55,12 @@ async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
         access_token = result["access_token"]
         refresh_token = result["refresh_token"]
 
-        # ✅ 리디렉션 방식으로 토큰 전달
-        redirect_url = f"{settings.KAKAO_REDIRECT_URI}?token={access_token}&refresh={refresh_token}"
+        # ✅ URL 인코딩 적용
+        encoded_access_token = quote(access_token)
+        encoded_refresh_token = quote(refresh_token)
+
+        # ✅ 리디렉션 URL에 인코딩된 토큰 추가
+        redirect_url = f"{settings.KAKAO_REDIRECT_URI}?token={encoded_access_token}&refresh={encoded_refresh_token}"
         return RedirectResponse(url=redirect_url)
 
     except Exception as e:
