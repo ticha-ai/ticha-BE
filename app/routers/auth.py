@@ -41,7 +41,7 @@ async def kakao_login_redirect():
     return RedirectResponse(url=kakao_auth_url)
 
 
-@router.post("/oauth/kakao/callback")
+@router.get("/oauth/kakao/callback")
 async def kakao_callback(data: dict, db: AsyncSession = Depends(get_db)):
     """
     프론트에서 받은 카카오 인가코드를 사용해 로그인 또는 회원가입 처리
