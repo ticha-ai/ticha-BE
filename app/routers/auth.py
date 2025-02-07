@@ -42,33 +42,19 @@ async def kakao_login_redirect():
 
 
 @router.get("/oauth/kakao/callback")
-async def kakao_callback(data: dict, db: AsyncSession = Depends(get_db)):
-    """
-    프론트에서 받은 카카오 인가코드를 사용해 로그인 또는 회원가입 처리
-    """
-    code = data.get("code")  # ✅ 프론트에서 전달한 인가코드
+async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
+    """카카오 OAuth 인증 후 프론트엔드로 리디렉션"""
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code is required")
 
     try:
         result = await kakao_login(code, db)
-        user = result["user"]
-        access_token = create_access_token(
-            data={"user_id": user.id}, expires_delta=timedelta(minutes=30)
-        )
-        refresh_token = create_refresh_token(data={"user_id": user.id})
+        access_token = result["access_token"]
+        refresh_token = result["refresh_token"]
 
-        return JSONResponse(
-            content={
-                "user": {
-                    "id": user.id,
-                    "name": user.name,
-                    "email": user.email,
-                },
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-            }
-        )
+        # ✅ 리디렉션 방식으로 토큰 전달
+        redirect_url = f"{settings.FRONTEND_REDIRECT_URI}?token={access_token}&refresh={refresh_token}"
+        return RedirectResponse(url=redirect_url)
 
     except Exception as e:
         logger.error(f"Kakao login failed: {e}")
