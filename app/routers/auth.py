@@ -97,7 +97,7 @@ async def kakao_token_exchange(
                 "email": user.email,
                 "profile_image": getattr(
                     user, "profile_image", None
-                ),  # ✅ DB에 저장되지 않지만 응답에 포함
+                ),  # ✅ 프로필 이미지 추가(DB 저장 x)
             },
             "message": "Login successful",
         }
