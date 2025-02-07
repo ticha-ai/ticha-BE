@@ -52,7 +52,9 @@ async def kakao_login_redirect():
 
 @router.post("/oauth/kakao/token")
 async def kakao_token_exchange(
-    code: str = Query(..., description="OAuth Authorization Code"),
+    code: str = Body(
+        ..., description="OAuth Authorization Code"
+    ),  # ✅ `Query` → `Body`로 변경
     db: AsyncSession = Depends(get_db),
 ):
     """카카오 OAuth 인증 후 서비스 자체 JWT 발급"""
@@ -89,7 +91,7 @@ async def kakao_token_exchange(
                 "id": user.id,
                 "name": user.name,
                 "email": user.email,
-                "profile_image": user.profile_image,  # ✅ 응답에 profile_image 추가
+                "profile_image": user.profile_image,
             },
             "message": "Login successful",
         }
