@@ -3,6 +3,7 @@ import secrets  # CSRF 방지를 위한 state 생성
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
+import httpx
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
@@ -24,6 +25,10 @@ from app.services.user_service import find_or_create_kakao_user
 
 
 class KakaoTokenRequest(BaseModel):
+    code: str
+
+
+class OAuthRequest(BaseModel):
     code: str
 
 
@@ -52,22 +57,28 @@ async def kakao_login_redirect():
 
 @router.post("/oauth/kakao/token")
 async def kakao_token_exchange(
-    code: str = Body(
-        ..., description="OAuth Authorization Code"
-    ),  # ✅ `Query` → `Body`로 변경
+    request: OAuthRequest,  # ✅ `Body`에서 안전하게 받기
     db: AsyncSession = Depends(get_db),
 ):
     """카카오 OAuth 인증 후 서비스 자체 JWT 발급"""
+
+    code = request.code
+    logger.debug(f"🔹 Received code: {code}")
+
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code is required")
 
     try:
+        # ✅ 2. 카카오 서버에서 액세스 토큰 요청
         kakao_token_response = await get_kakao_access_token(
             code=code,
             redirect_uri=settings.KAKAO_REDIRECT_URI,
             client_id=settings.KAKAO_CLIENT_ID,
             client_secret=settings.KAKAO_CLIENT_SECRET,
         )
+
+        # ✅ 3. 응답 값 검증 및 디버깅 로그 추가
+        logger.debug(f"🔹 Kakao Token Response: {kakao_token_response}")
 
         kakao_access_token = kakao_token_response.get("access_token")
         kakao_refresh_token = kakao_token_response.get("refresh_token")
@@ -77,10 +88,17 @@ async def kakao_token_exchange(
                 status_code=400, detail="Invalid access token from Kakao"
             )
 
+        # ✅ 4. 카카오 API에서 사용자 정보 가져오기
         kakao_user_info = await get_kakao_user_info(kakao_access_token)
+        logger.debug(f"🔹 Kakao User Info: {kakao_user_info}")
 
+        # ✅ 5. 사용자 확인 및 refresh_token 저장 (`refresh_token`이 없으면 기존 값 유지)
         user = await find_or_create_kakao_user(kakao_user_info, kakao_refresh_token, db)
 
+        # ✅ 6. 프로필 이미지가 존재하지 않을 경우 대비
+        profile_image = kakao_user_info.get("profile_image", "")
+
+        # ✅ 7. 서비스 자체 JWT 발급
         service_access_token = create_access_token(data={"user_id": user.id})
         service_refresh_token = create_refresh_token(data={"user_id": user.id})
 
@@ -91,13 +109,25 @@ async def kakao_token_exchange(
                 "id": user.id,
                 "name": user.name,
                 "email": user.email,
-                "profile_image": user.profile_image,
+                "profile_image": profile_image,  # ✅ `profile_image`가 없을 경우 대비
             },
             "message": "Login successful",
         }
 
+    except httpx.HTTPStatusError as e:
+        logger.error(f"🔺 Kakao API Request Failed: {e.response.json()}")
+        raise HTTPException(
+            status_code=400, detail=f"Kakao API Error: {e.response.text}"
+        )
+
+    except KeyError as e:
+        logger.error(f"🔺 KeyError: {e}")
+        raise HTTPException(
+            status_code=500, detail="Internal Server Error: Missing data in response"
+        )
+
     except Exception as e:
-        logger.error(f"Kakao OAuth processing error: {e}")
+        logger.error(f"🔺 Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
