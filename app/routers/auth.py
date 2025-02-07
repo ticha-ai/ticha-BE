@@ -53,7 +53,7 @@ async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
         refresh_token = result["refresh_token"]
 
         # ✅ 리디렉션 방식으로 토큰 전달
-        redirect_url = f"{settings.FRONTEND_REDIRECT_URI}?token={access_token}&refresh={refresh_token}"
+        redirect_url = f"{settings.KAKAO_REDIRECT_URI}?token={access_token}&refresh={refresh_token}"
         return RedirectResponse(url=redirect_url)
 
     except Exception as e:
