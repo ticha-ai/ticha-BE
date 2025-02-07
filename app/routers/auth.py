@@ -52,39 +52,33 @@ async def kakao_login_redirect():
 
 @router.post("/oauth/kakao/token")
 async def kakao_token_exchange(
-    request: KakaoTokenRequest,  # ✅ `code`를 Body에서 받음
+    code: str = Query(..., description="OAuth Authorization Code"),
     db: AsyncSession = Depends(get_db),
 ):
     """카카오 OAuth 인증 후 서비스 자체 JWT 발급"""
-    if not request.code:
+    if not code:
         raise HTTPException(status_code=400, detail="Authorization code is required")
 
     try:
-        # ✅ 1. 카카오 서버에서 액세스 토큰 요청
         kakao_token_response = await get_kakao_access_token(
-            code=request.code,  # ✅ 이제 request.code로 가져옴
+            code=code,
             redirect_uri=settings.KAKAO_REDIRECT_URI,
             client_id=settings.KAKAO_CLIENT_ID,
             client_secret=settings.KAKAO_CLIENT_SECRET,
         )
 
         kakao_access_token = kakao_token_response.get("access_token")
-        kakao_refresh_token = kakao_token_response.get(
-            "refresh_token"
-        )  # ✅ `None`일 수도 있음
+        kakao_refresh_token = kakao_token_response.get("refresh_token")
 
         if not kakao_access_token:
             raise HTTPException(
                 status_code=400, detail="Invalid access token from Kakao"
             )
 
-        # ✅ 2. 카카오 API에서 사용자 정보 가져오기
         kakao_user_info = await get_kakao_user_info(kakao_access_token)
 
-        # ✅ 3. 사용자 확인 및 refresh_token 저장 (`refresh_token`이 없으면 기존 값 유지)
         user = await find_or_create_kakao_user(kakao_user_info, kakao_refresh_token, db)
 
-        # ✅ 4. 서비스 자체 JWT 발급
         service_access_token = create_access_token(data={"user_id": user.id})
         service_refresh_token = create_refresh_token(data={"user_id": user.id})
 
@@ -95,9 +89,7 @@ async def kakao_token_exchange(
                 "id": user.id,
                 "name": user.name,
                 "email": user.email,
-                "profile_image": getattr(
-                    user, "profile_image", None
-                ),  # ✅ 프로필 이미지 추가(DB 저장 x)
+                "profile_image": user.profile_image,  # ✅ 응답에 profile_image 추가
             },
             "message": "Login successful",
         }

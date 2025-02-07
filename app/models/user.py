@@ -34,6 +34,9 @@ class User(Base, BaseTimestamp):
     oauth_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     refresh_token: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # ✅ 카카오 프로필 이미지 추가
+    profile_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     review_completed_quizzes_count: Mapped[int] = mapped_column(Integer, default=0)
     graded_quizzes_count: Mapped[int] = mapped_column(Integer, default=0)
     ongoing_quizzes_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -46,20 +49,16 @@ class User(Base, BaseTimestamp):
     #   Relationships
     # ============== #
 
-    # (User -> UserProblemStat) 1:N
     problem_stats: Mapped[List["UserProblemStat"]] = relationship(
         "UserProblemStat", back_populates="user"
     )
 
-    # (User -> Quiz) 1:N
     quizzes: Mapped[List["Quiz"]] = relationship("Quiz", back_populates="user")
 
-    # (User -> StudyLog) 1:N
     study_logs: Mapped[List["StudyLog"]] = relationship(
         "StudyLog", back_populates="user"
     )
 
-    # (User -> AnswerSheet) 1:N
     answer_sheets: Mapped[List["AnswerSheet"]] = relationship(
         "AnswerSheet", back_populates="user"
     )
