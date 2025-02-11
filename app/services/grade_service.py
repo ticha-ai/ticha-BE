@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.models.answer_sheet import AnswerSheet
+from app.models.grading_result import GradingResult
 from app.models.problem import Problem
 from app.models.problem_in_quiz import ProblemInQuiz
 from app.models.quiz import Quiz
@@ -51,58 +52,77 @@ async def grade_answer_sheet(
                 ProblemInQuiz.problem_id == answer.problem_id,
             )
         )
-        problem_in_quiz = problem_in_quiz_result.scalars().first()
-        if not problem_in_quiz:
-            # 해당 문제가 퀴즈에 포함되지 않은 경우
-            raise HTTPException(
-                status_code=400,
-                detail=f"문제 {answer.problem_id}는 퀴즈 {quiz.id}에 포함되지 않습니다.",
-            )
-
-        # 문제의 정답 가져오기
-        problem_result = await db.execute(
-            select(Problem).where(Problem.id == answer.problem_id)
+    problem_in_quiz = problem_in_quiz_result.scalars().first()
+    if not problem_in_quiz:
+        raise HTTPException(
+            status_code=400,
+            detail=f"문제 {answer.problem_id}는 퀴즈 {quiz.id}에 포함되지 않습니다.",
         )
-        problem = problem_result.scalars().first()
-        if not problem:
-            raise HTTPException(
-                status_code=404,
-                detail=f"문제를 찾을 수 없습니다. (ID: {answer.problem_id})",
-            )
 
-        # 정답 여부 확인
-        is_correct = str(answer.selected_option) == str(problem.correct_answer)
-
-        # UserAnswer 업데이트 또는 생성
-        stmt = (
-            update(UserAnswer)
-            .where(
-                UserAnswer.answer_sheet_id == answer_sheet_id,
-                UserAnswer.problem_id == answer.problem_id,
-            )
-            .values(
-                user_answer=answer.selected_option,
-                has_answer=answer.selected_option is not None,
-                is_correct=is_correct,  # 정답 여부 저장
-            )
+    # 문제의 정답 가져오기
+    problem_result = await db.execute(
+        select(Problem).where(Problem.id == answer.problem_id)
+    )
+    problem = problem_result.scalars().first()
+    if not problem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"문제를 찾을 수 없습니다. (ID: {answer.problem_id})",
         )
-        result = await db.execute(stmt)
 
-        if result.rowcount == 0:
-            # 새로 추가된 답안 처리
-            new_answer = UserAnswer(
-                answer_sheet_id=answer_sheet_id,
-                problem_id=answer.problem_id,
-                user_answer=answer.selected_option,
-                has_answer=answer.selected_option is not None,
-                is_correct=is_correct,  # 정답 여부 저장
-            )
-            db.add(new_answer)
+    # 정답 여부 확인
+    is_correct = str(answer.selected_option) == str(problem.correct_answer)
+    result_text = "correct" if is_correct else "incorrect"
 
-        if is_correct:
-            correct_count += 1
+    # UserAnswer 업데이트 또는 생성
+    stmt = (
+        update(UserAnswer)
+        .where(
+            UserAnswer.answer_sheet_id == answer_sheet_id,
+            UserAnswer.problem_id == answer.problem_id,
+        )
+        .values(
+            user_answer=answer.selected_option,
+            has_answer=answer.selected_option is not None,
+            is_correct=is_correct,  # 정답 여부 저장
+        )
+    )
+    result = await db.execute(stmt)
 
-    # 답안지 상태 업데이트
+    if result.rowcount == 0:
+        # 새로 추가된 답안 처리
+        new_answer = UserAnswer(
+            answer_sheet_id=answer_sheet_id,
+            problem_id=answer.problem_id,
+            user_answer=answer.selected_option,
+            has_answer=answer.selected_option is not None,
+            is_correct=is_correct,  # 정답 여부 저장
+        )
+        db.add(new_answer)
+
+    # GradingResult
+    grading_result_stmt = (
+        update(GradingResult)
+        .where(
+            GradingResult.answer_sheet_id == answer_sheet_id,
+            GradingResult.problem_id == answer.problem_id,
+        )
+        .values(result=result_text)
+    )
+    grading_result_update = await db.execute(grading_result_stmt)
+
+    if grading_result_update.rowcount == 0:
+        new_grading_result = GradingResult(
+            answer_sheet_id=answer_sheet_id,
+            problem_id=answer.problem_id,
+            result=result_text,
+        )
+        db.add(new_grading_result)
+
+    if is_correct:
+        correct_count += 1
+
+    # 답안지 상태 업데이트 - 채점 완료 상태로
     answer_sheet.status = "graded"
     await db.commit()
     await db.refresh(answer_sheet)
