@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 
 from app.models.answer_sheet import AnswerSheet
 from app.models.grading_result import GradingResult
@@ -134,4 +135,92 @@ async def grade_answer_sheet(
         "score": score,
         "correct_count": correct_count,
         "total_questions": total_questions,
+    }
+
+
+async def get_grading_results_with_pagination(
+    answer_sheet_id: int,
+    page: int,
+    page_size: int,
+    db: AsyncSession,
+):
+    # 해당 답안지 AnswerSheet 조회
+    answer_sheet_query = await db.execute(
+        select(AnswerSheet).where(AnswerSheet.id == answer_sheet_id)
+    )
+    answer_sheet = answer_sheet_query.scalars().first()
+    if not answer_sheet:
+        raise HTTPException(status_code=404, detail="답안지를 찾을 수 없습니다.")
+
+    # Quiz 정보 조회 (총 문제 수, 단원 이름, 난이도)
+    quiz_query = await db.execute(
+        select(Quiz)
+        .options(joinedload(Quiz.chapter))
+        .where(Quiz.id == answer_sheet.quiz_id)
+    )
+    quiz = quiz_query.scalars().first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="퀴즈를 찾을 수 없습니다.")
+
+    # ProblemInQuiz 기준으로 모든 문제 가져오기 (페이지네이션 적용)
+    problems_in_quiz_query = (
+        select(ProblemInQuiz, Problem)
+        .join(Problem, ProblemInQuiz.problem_id == Problem.id)
+        .where(ProblemInQuiz.quiz_id == quiz.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    problems_in_quiz = await db.execute(problems_in_quiz_query)
+
+    problems = []
+    for problem_in_quiz, problem in problems_in_quiz.all():
+        # GradingResult와 UserAnswer 조회
+        grading_result_query = await db.execute(
+            select(GradingResult, UserAnswer)
+            .join(UserAnswer, GradingResult.problem_id == UserAnswer.problem_id)
+            .where(
+                GradingResult.answer_sheet_id == answer_sheet_id,
+                GradingResult.problem_id == problem.id,
+            )
+        )
+        result = grading_result_query.first()
+
+        grading_result = result[0] if result else None
+        user_answer = result[1] if result else None
+
+        # 문제별 데이터 추가
+        problems.append(
+            {
+                "problem_id": problem.id,
+                "user_answer": user_answer.user_answer if user_answer else None,
+                "correct_answer": problem.correct_answer,
+                "is_correct": (
+                    grading_result.result == "correct" if grading_result else False
+                ),
+                "is_starred": user_answer.is_starred if user_answer else False,
+            }
+        )
+
+    # 총 문제 수 계산 및 페이지네이션 처리
+    total_questions = quiz.total_problems_count
+    correct_count = sum(1 for problem in problems if problem["is_correct"])
+    total_pages = (total_questions + page_size - 1) // page_size
+
+    # 소요 시간 (MM:SS format)
+    passed_time_seconds = answer_sheet.passed_time or 0
+    passed_time_minutes = int(passed_time_seconds // 60)
+    passed_time_seconds = int(passed_time_seconds % 60)
+    passed_time_formatted = f"{passed_time_minutes}:{passed_time_seconds:02d}"
+
+    chapter_name = quiz.chapter.name
+
+    return {
+        "total_questions": total_questions,
+        "correct_count": correct_count,
+        "passed_time": passed_time_formatted,
+        "chapter_name": chapter_name,
+        "difficulty": quiz.difficulty,
+        "problems": problems,
+        "current_page": page,
+        "total_pages": total_pages,
     }
