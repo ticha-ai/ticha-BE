@@ -6,7 +6,7 @@ from app.core.security import get_current_user
 from app.schemas.grade import GradeRequest, GradingResultResponse
 from app.services import grade_service
 
-router = APIRouter(prefix="/problems/answers")
+router = APIRouter(prefix="/answers")
 
 
 @router.post("/{answersheet_id}/grade", status_code=status.HTTP_201_CREATED)
