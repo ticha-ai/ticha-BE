@@ -1,8 +1,12 @@
+from typing import List
+
 from fastapi import HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AnswerSheet, ProblemInQuiz, UserAnswer
+from app.schemas.answer_star import StarredProblem
 
 
 async def update_star_status(
@@ -60,3 +64,28 @@ async def update_star_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="별표 상태 업데이트 중 데이터베이스 오류가 발생했습니다.",
         )
+
+
+async def get_starred_problems(
+    db: AsyncSession, answersheet_id: int
+) -> List[StarredProblem]:
+    query = select(UserAnswer).where(
+        UserAnswer.answer_sheet_id == answersheet_id,
+        UserAnswer.is_starred == True,  # 별표된 문제만 필터링
+    )
+    result = await db.execute(query)
+    starred_problems = result.scalars().all()
+
+    if not starred_problems:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="해당 문제지에서 사용자가 별표한 문제가 없습니다.",
+        )
+
+    return [
+        StarredProblem(
+            problem_id=user_answer.problem_id,
+            is_starred=user_answer.is_starred,
+        )
+        for user_answer in starred_problems
+    ]
