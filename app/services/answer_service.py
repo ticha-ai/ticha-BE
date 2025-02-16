@@ -34,6 +34,20 @@ class AnswerService:
             async with self.db.begin():
                 # 1. 퀴즈 유효성 검증
                 quiz = await self._validate_quiz(quiz_id, answer_data.user_id)
+                # 퀴즈 객체로부터 문제 ID 목록을 추출
+                valid_problem_ids = {piq.problem_id for piq in quiz.problems_in_quizzes}
+                # 각 답안이 퀴즈에 실제로 포함된 문제인지 검증
+                for answer in answer_data.answers:
+                    if answer.problem_id not in valid_problem_ids:
+                        logger.error(
+                            f"Problem ID {answer.problem_id} is not part of quiz {quiz_id}"
+                        )
+                        raise ValidationError(
+                            code="INVALID_PROBLEM",
+                            message=f"Problem {answer.problem_id} is not part of quiz {quiz_id}",
+                            details={"problem_id": answer.problem_id},
+                        )
+                logger.debug("All provided problems are valid for this quiz")
                 logger.debug(f"Quiz {quiz_id} validated successfully")
 
                 # 2. AnswerSheet 업데이트 또는 생성
@@ -79,10 +93,14 @@ class AnswerService:
 
     async def _validate_quiz(self, quiz_id: int, user_id: int) -> Quiz:
         """Validate quiz existence and status(in_progress)."""
-        query = select(Quiz).where(
-            Quiz.id == quiz_id,
-            Quiz.user_id == user_id,
-            Quiz.status == AnswerSheetStatus.IN_PROGRESS.value,
+        query = (
+            select(Quiz)
+            .options(selectinload(Quiz.problems_in_quizzes))
+            .where(
+                Quiz.id == quiz_id,
+                Quiz.user_id == user_id,
+                Quiz.status == AnswerSheetStatus.IN_PROGRESS.value,
+            )
         )
         result = await self.db.execute(query)
         quiz = result.scalar_one_or_none()
