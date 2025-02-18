@@ -37,20 +37,14 @@ jobs:
       run: |
         poetry install --no-root
 
-     # pre-commit 설치 및 실행 추가
-    - name: Install and run pre-commit
-      run: |
-        poetry run pre-commit install
-        poetry run pre-commit run --all-files
-
     # 5. 린트 검사
-    # - name: Run code formatter check (Black)
-    #   run: |
-    #     poetry run black --check .
+    - name: Run code formatter check (Black)
+      run: |
+        poetry run black --check .
 
-    # - name: Run import sorting check (isort)
-    #   run: |
-    #     poetry run isort --check .
+    - name: Run import sorting check (isort)
+      run: |
+        poetry run isort --check .
 
     # # 6. 테스트 실행
     # - name: Run tests with Pytest
