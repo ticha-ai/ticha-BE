@@ -27,6 +27,7 @@ class Problem(Base, BaseTimestamp):
     attempt_count: Mapped[int] = mapped_column(Integer, default=0)
     correct_count: Mapped[int] = mapped_column(Integer, default=0)
     problem_text: Mapped[str] = mapped_column(Text, nullable=False)
+    choices_count: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
 
     # Relationships
     chapter: Mapped["Chapter"] = relationship("Chapter", back_populates="problems")

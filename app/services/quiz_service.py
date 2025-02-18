@@ -160,15 +160,28 @@ async def get_quiz_questions(db: AsyncSession, quiz_id: int, page: int, limit: i
     total_result = await db.execute(total_query)
     total_count = total_result.scalar()
 
+    # 문제가 없는 경우 에러 처리
+    if total_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No questions found for quiz {quiz_id}. This might indicate data corruption.",
+        )
+
     # 전체 페이지 수 계산
     total_pages = (total_count + limit - 1) // limit
+
+    if page > total_pages:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Page {page} exceeds available pages. Max page is {total_pages}",
+        )
 
     #  문제 데이터 변환
     questions = [
         {
             "question_id": problem.problem_id,
             "image_url": problem.problem.image_url if problem.problem.image_url else "",
-            "choices": [1, 2, 3, 4, 5],  # ✅ TODO: 선택지 로직 반영 필요
+            "choices_count": problem.problem.choices_count,  # ✅ 선지 개수 반환으로 수정
         }
         for problem in problems
     ]
