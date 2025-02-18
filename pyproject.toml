@@ -27,6 +27,9 @@ faker = "^35.0.0"
 requests = "^2.32.3"
 aiohttp = "^3.11.11"
 itsdangerous = "^2.2.0"
+email-validator = "^2.2.0"
+passlib = "^1.7.4"
+bcrypt = "^4.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -35,6 +38,7 @@ isort = "^5.13.2"
 pytest = "^8.3.4"
 pre-commit = "^4.1.0"
 httpx = "^0.28.1"
+autoflake = "^2.3.1"
 
 [build-system]
 requires = ["poetry-core"]
