@@ -6,7 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings  # ✅ 환경 변수 설정 가져오기
-from app.middleware.auth_middleware import PUBLIC_PATHS, auth_middleware
+from app.core.public_routes import PublicRoute
+from app.middleware.auth_middleware import auth_middleware
 from app.routers import answer, answer_star, auth, basic_auth, grade, pages, quiz
 
 # security_scheme 정의
@@ -37,13 +38,13 @@ def custom_openapi():
         }
     }
 
+    # PublicRoute Enum 값들을 사용
+    public_paths = [route.value for route in PublicRoute]
+
     for endpoint_path in openapi_schema["paths"].keys():
         path_item = openapi_schema["paths"][endpoint_path]
         for method in path_item.values():
-            # PUBLIC_PATHS에 있는 경로는 보안 요구사항 추가하지 않음
-            if not any(
-                endpoint_path.startswith(public_path) for public_path in PUBLIC_PATHS
-            ):
+            if endpoint_path not in public_paths:
                 method["security"] = [{"Bearer": []}]
 
     app.openapi_schema = openapi_schema

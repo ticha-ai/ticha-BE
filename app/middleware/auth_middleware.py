@@ -6,33 +6,18 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.future import select
 
 from app.core.database import get_db
+from app.core.public_routes import is_public_path
 from app.models.user import User
 from app.services.jwt_service import decode_token
 
 logger = logging.getLogger(__name__)
-
-# 인증이 필요 없는 public 경로들
-PUBLIC_PATHS: List[str] = [
-    "/api/v1/auth/login",
-    "/api/v1/auth/register",
-    "/docs",
-    "/openapi.json",
-    "/redoc",
-    "/oauth/kakao/login",
-    "/oauth/kakao/token",
-    "/oauth/kakao/callback",
-    "/oauth/google/login",
-    "/oauth/google/callback",
-    "/index",
-    "/login",
-]
 
 
 async def auth_middleware(request: Request, call_next):
     """인증 미들웨어"""
 
     # public 경로 체크
-    if any(request.url.path.startswith(path) for path in PUBLIC_PATHS):
+    if is_public_path(request.url.path):
         return await call_next(request)
 
     try:
@@ -68,8 +53,8 @@ async def auth_middleware(request: Request, call_next):
     except HTTPException as e:
         return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")  # 예상치 못한 에러 로깅
+        # 예상치 못한 에러는 500으로 처리
+        logger.error(f"Internal Server Error: {str(e)}")
         return JSONResponse(
-            status_code=401,
-            content={"detail": f"Could not validate credentials: {str(e)}"},
+            status_code=500, content={"detail": "Internal server error"}
         )

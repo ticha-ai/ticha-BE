@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Column, Integer, String
+from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, BaseTimestamp

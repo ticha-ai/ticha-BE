@@ -3,7 +3,7 @@ import random
 from datetime import datetime, timedelta
 
 from faker import Faker
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.core.database import async_session
