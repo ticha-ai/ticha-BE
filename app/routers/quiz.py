@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -64,7 +64,10 @@ async def create_quiz_endpoint(
     status_code=status.HTTP_200_OK,
 )
 async def get_questions(
-    quiz_id: int, page: int, limit: int, db: AsyncSession = Depends(get_db)
+    quiz_id: int,
+    page: int = Query(1, ge=1),
+    limit: int = Query(5, ge=1),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     문제지의 문제 조회하는 API
