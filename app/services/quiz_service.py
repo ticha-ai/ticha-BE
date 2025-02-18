@@ -181,7 +181,7 @@ async def get_quiz_questions(db: AsyncSession, quiz_id: int, page: int, limit: i
         {
             "question_id": problem.problem_id,
             "image_url": problem.problem.image_url if problem.problem.image_url else "",
-            "choices_count": problem.problem.choices_count ,  # ✅ 선지 개수 반환으로 수정
+            "choices_count": problem.problem.choices_count,  # ✅ 선지 개수 반환으로 수정
         }
         for problem in problems
     ]
