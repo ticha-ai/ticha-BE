@@ -1,5 +1,4 @@
-# api/v1/endpoints/study_dashboard.py
-from typing import Optional
+
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session

@@ -105,31 +105,36 @@ async def create_quiz(
         await db.commit()
         await db.refresh(new_quiz)
 
-        # study_log 생성 또는 업데이트
-        today = date.today()
-        study_log_query = select(StudyLog).where(
-            StudyLog.user_id == user_id, StudyLog.quiz_date == today
-        )
-        result = await db.execute(study_log_query)
-        study_log = result.scalar_one_or_none()
-
-        if study_log:
-            study_log.quiz_count += 1
-        else:
-            study_log = StudyLog(user_id=user_id, quiz_date=today, quiz_count=1)
-            db.add(study_log)
-
-        # 문제지와 문제 연결 (ProblemInQuiz 생성)
-        for idx, problem in enumerate(selected_problems, start=1):
-            problem_in_quiz = ProblemInQuiz(
-                quiz_id=new_quiz.id, problem_id=problem.id, problem_number=idx
+        # StudyLog 생성 또는 업데이트
+        try:
+            today = date.today()
+            study_log_query = select(StudyLog).where(
+                StudyLog.user_id == user_id, StudyLog.quiz_date == today
             )
-            db.add(problem_in_quiz)
+            result = await db.execute(study_log_query)
+            study_log = result.scalar_one_or_none()
 
-        await db.commit()
+            if study_log:
+                study_log.quiz_count += 1
+            else:
+                study_log = StudyLog(user_id=user_id, quiz_date=today, quiz_count=1)
+                db.add(study_log)
 
-        logger.info(f"Quiz created with id {new_quiz.id}")
-        return new_quiz
+            # 문제지와 문제 연결 (ProblemInQuiz 생성)
+            for idx, problem in enumerate(selected_problems, start=1):
+                problem_in_quiz = ProblemInQuiz(
+                    quiz_id=new_quiz.id, problem_id=problem.id, problem_number=idx
+                )
+                db.add(problem_in_quiz)
+
+            await db.commit()
+
+            logger.info(f"Quiz created with id {new_quiz.id}")
+            return new_quiz
+        except SQLAlchemyError as e:
+            logger.error(f"StudyLog 업데이트 실패: {e}")
+            # StudyLog 실패는 퀴즈 생성에 영향을 주지 않도록 함
+            pass
 
     except SQLAlchemyError as e:
         await db.rollback()

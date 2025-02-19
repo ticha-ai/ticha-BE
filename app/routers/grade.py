@@ -17,7 +17,10 @@ async def grade_quiz(
 ):
 
     result = await grade_service.grade_answer_sheet(
-        answersheet_id, db, grade_request.answers, request.state.user.id
+        answersheet_id=answersheet_id,
+        db=db,
+        answers=grade_request.answers,
+        user_id=request.state.user.id,
     )
 
     if not result:
