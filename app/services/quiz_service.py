@@ -1,5 +1,6 @@
 import logging
 import random
+from datetime import date
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
@@ -13,6 +14,7 @@ from app.models.chapter import Chapter
 from app.models.problem import Problem
 from app.models.problem_in_quiz import ProblemInQuiz
 from app.models.quiz import Quiz
+from app.models.study_log import StudyLog
 from app.schemas.quiz import QuizCreateRequest
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ ALLOWED_PROBLEM_COUNTS = {5, 10, 20, 30}
 
 
 async def create_quiz(
-    db: AsyncSession, quiz_in: QuizCreateRequest, current_user: dict
+    db: AsyncSession, quiz_in: QuizCreateRequest, user_id: int
 ) -> Quiz:
     try:
         logger.info("Starting quiz creation")
@@ -94,7 +96,7 @@ async def create_quiz(
         # 문제지 생성
         new_quiz = Quiz(
             title=f"Quiz for Chapter {quiz_in.chapter_id}",
-            user_id=current_user["user_id"],  # 실제 사용자 ID 사용
+            user_id=user_id,
             difficulty=quiz_in.difficulty,
             total_problems_count=quiz_in.question_count,
             chapter_id=quiz_in.chapter_id,
@@ -112,8 +114,26 @@ async def create_quiz(
 
         await db.commit()
 
-        logger.info(f"Quiz created with id {new_quiz.id}")
-        return new_quiz
+        # StudyLog 생성 또는 업데이트
+        try:
+            today = date.today()
+            study_log_query = select(StudyLog).where(
+                StudyLog.user_id == user_id, StudyLog.quiz_date == today
+            )
+            result = await db.execute(study_log_query)
+            study_log = result.scalar_one_or_none()
+
+            if study_log:
+                study_log.quiz_count += 1
+            else:
+                study_log = StudyLog(user_id=user_id, quiz_date=today, quiz_count=1)
+                db.add(study_log)
+
+            logger.info(f"Quiz created with id {new_quiz.id}")
+            return new_quiz
+        except SQLAlchemyError as e:
+            logger.error(f"StudyLog 업데이트 실패: {e}")
+            # StudyLog 실패는 퀴즈 생성에 영향을 주지 않도록 함
 
     except SQLAlchemyError as e:
         await db.rollback()
