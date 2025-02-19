@@ -3,17 +3,21 @@ from calendar import monthrange
 from datetime import date
 
 from fastapi import HTTPException, status
-from sqlalchemy import extract, func, select
+from sqlalchemy import Integer, extract, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.models.answer_sheet import AnswerSheet, AnswerSheetStatus
+from app.models.chapter import Chapter
+from app.models.problem import Problem
 from app.models.quiz import Quiz
 from app.models.study_log import StudyLog
 from app.models.user_answer import UserAnswer
 from app.schemas.study_dashboard import (
     CalendarStudyRecordsResponse,
+    ChapterStatistics,
+    ChapterStatisticsResponse,
     InProgressAnswerSheet,
     InProgressAnswerSheetResponse,
     StudyRecordDay,
@@ -164,4 +168,74 @@ class StudyDashboardService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to fetch in-progress answer sheets.",
+            )
+
+    async def get_chapter_statistics(self, user_id: int) -> ChapterStatisticsResponse:
+        try:
+            # 단원별 통계 쿼리
+            query = (
+                select(
+                    Problem.chapter_id,
+                    Chapter.name.label("chapter_name"),
+                    func.count(UserAnswer.id).label("total_problems"),
+                    func.sum(UserAnswer.is_correct.cast(Integer)).label(
+                        "correct_answers"
+                    ),
+                )
+                .join(UserAnswer, UserAnswer.problem_id == Problem.id)
+                .join(AnswerSheet, AnswerSheet.id == UserAnswer.answer_sheet_id)
+                .join(Chapter, Chapter.id == Problem.chapter_id)
+                .where(
+                    AnswerSheet.user_id == user_id,
+                    AnswerSheet.status
+                    == AnswerSheetStatus.GRADED.value,  # 채점이 완료된 답안지만
+                )
+                .group_by(Problem.chapter_id, Chapter.name)
+            )
+
+            result = await self.db.execute(query)
+            chapter_stats = result.fetchall()
+
+            # 전체 통계 계산
+            total_problems = 0
+            total_correct = 0
+            response_data = []
+
+            for stat in chapter_stats:
+                total_problems += stat.total_problems
+                total_correct += stat.correct_answers
+
+                # 단원별 정답률 계산
+                chapter_accuracy = (
+                    (stat.correct_answers / stat.total_problems) * 100
+                    if stat.total_problems > 0
+                    else 0
+                )
+
+                response_data.append(
+                    ChapterStatistics(
+                        chapter_id=stat.chapter_id,
+                        chapter_name=stat.chapter_name,
+                        solved_problems=stat.total_problems,  # 단원별 푼 문제 수
+                        correct_answers=stat.correct_answers,  # 단원별 정답 수
+                        accuracy_rate=chapter_accuracy,  # 단원별 정답률
+                    )
+                )
+
+            # 전체 정답률 계산
+            total_accuracy_rate = (
+                (total_correct / total_problems * 100) if total_problems > 0 else 0
+            )
+
+            return ChapterStatisticsResponse(
+                statistics=response_data,
+                total_accuracy_rate=total_accuracy_rate,  # 전체 정답률 추가
+                total_solved_problems=total_problems,  # 전체 푼 문제 수
+            )
+
+        except Exception as e:
+            logger.error(f"단원 통계를 조회하는 중 오류가 발생했습니다: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="단원 통계를 조회하는 중 오류가 발생했습니다.",
             )

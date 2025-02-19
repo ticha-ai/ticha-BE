@@ -31,3 +31,16 @@ class InProgressAnswerSheet(BaseModel):
 
 class InProgressAnswerSheetResponse(BaseModel):
     answer_sheets: List[InProgressAnswerSheet]
+
+
+class ChapterStatistics(BaseModel):
+    chapter_id: int
+    solved_problems: int  # 단원별 푼 문제 수
+    correct_answers: int  # 단원별 정답 수
+    accuracy_rate: float  # 단원별 정답률
+
+
+class ChapterStatisticsResponse(BaseModel):
+    statistics: List[ChapterStatistics]
+    total_solved_problems: int  # 전체 푼 문제 수
+    total_accuracy_rate: float  # 전체 정답률

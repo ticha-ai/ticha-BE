@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.study_dashboard import (
     CalendarStudyRecordsResponse,
+    ChapterStatisticsResponse,
     InProgressAnswerSheetResponse,
 )
 from app.services.study_dashboard_service import StudyDashboardService
@@ -37,12 +38,13 @@ async def get_calendar_study_records(
         CalendarStudyRecordsResponse: 캘린더 학습 기록
     """
     try:
-        user = request.state.user  # 미들웨어에서 설정된 사용자 정보
+        user = request.state.user
         service = StudyDashboardService(db)
         return await service.get_calendar_study_records(user.id, year, month)
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to fetch calendar study records: {str(e)}"
+            status_code=500,
+            detail=f"캘린더 학습 기록을 조회하는 중 오류가 발생했습니다: {str(e)}",
         )
 
 
@@ -65,6 +67,26 @@ async def get_in_progress_answer_sheets(
             - progress_rate (float): 진행률
             - study_date (date): 학습일
     """
-    user = request.state.user
-    service = StudyDashboardService(db)
-    return await service.get_in_progress_answer_sheets(user.id)
+    try:
+        user = request.state.user
+        service = StudyDashboardService(db)
+        return await service.get_in_progress_answer_sheets(user.id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"진행 중인 답안지를 조회하는 중 오류가 발생했습니다: {str(e)}",
+        ) from e
+
+
+@router.get("/chapters/statistics", response_model=ChapterStatisticsResponse)
+async def get_chapter_statistics(request: Request, db: AsyncSession = Depends(get_db)):
+
+    try:
+        user = request.state.user
+        service = StudyDashboardService(db)
+        return await service.get_chapter_statistics(user.id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"단원 통계를 조회하는 중 오류가 발생했습니다: {str(e)}",
+        ) from e
