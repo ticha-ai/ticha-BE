@@ -57,6 +57,11 @@ async def login(db: AsyncSession, user_data: UserLogin):
     access_token = create_access_token(data={"user_id": user.id})
     refresh_token = create_refresh_token(data={"user_id": user.id})
 
+    # refresh_token 저장
+    user.refresh_token = refresh_token
+    db.add(user)
+    await db.commit()
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
