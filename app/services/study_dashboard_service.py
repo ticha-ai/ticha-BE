@@ -31,7 +31,10 @@ class StudyDashboardService:
     ) -> CalendarStudyRecordsResponse:
 
         if not (1 <= month <= 12):
-            raise ValueError("월은 1에서 12 사이의 값이어야 합니다.")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="월은 1에서 12 사이의 값이어야 합니다.",
+            )
 
         try:
             # 1. StudyLog 조회

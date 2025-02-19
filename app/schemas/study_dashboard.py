@@ -3,11 +3,13 @@ from typing import List
 
 from pydantic import BaseModel
 
+from app.models.answer_sheet import AnswerSheetStatus
+
 
 class QuizInfo(BaseModel):
     quiz_id: int
     title: str
-    status: str  # "in_progress", "graded", "reviewed"
+    status: AnswerSheetStatus
 
 
 class StudyRecordDay(BaseModel):

@@ -27,6 +27,14 @@ async def get_calendar_study_records(
     학습 대시보드의 캘린더 학습 기록을 조회합니다.
     - 해당 월의 모든 날짜에 대한 학습 기록 여부
     - 학습한 날의 경우 관련 퀴즈 정보 포함
+
+    Args:
+        request (Request): 사용자 정보가 포함된 요청 객체
+        year (int): 조회할 연도
+        month (int): 조회할 월 (1-12)
+
+    Returns:
+        CalendarStudyRecordsResponse: 캘린더 학습 기록
     """
     try:
         user = request.state.user  # 미들웨어에서 설정된 사용자 정보
@@ -44,6 +52,18 @@ async def get_in_progress_answer_sheets(
 ):
     """
     현재 로그인한 사용자가 진행 중인 답안지 목록을 조회합니다.
+    - 진행 중인 답안지의 진행률, 학습일, 퀴즈 제목 포함
+
+    Args:
+        request (Request): 사용자 정보가 포함된 요청 객체
+        db (AsyncSession): 데이터베이스 세션
+
+    Returns:
+        InProgressAnswerSheetResponse: 진행 중인 답안지 목록
+            - answer_sheet_id (int): 답안지 ID
+            - quiz_title (str): 퀴즈 제목
+            - progress_rate (float): 진행률
+            - study_date (date): 학습일
     """
     user = request.state.user
     service = StudyDashboardService(db)
