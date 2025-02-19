@@ -106,4 +106,3 @@ app.include_router(
     learning_progress.router, prefix="/api/v1", tags=["learning-progress"]
 )
 app.include_router(study_dashboard.router, prefix="/api/v1", tags=["study-dashboard"])
-
