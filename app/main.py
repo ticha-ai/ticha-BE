@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -8,6 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings  # ✅ 환경 변수 설정 가져오기
 from app.core.public_routes import PublicRoute
 from app.middleware.auth_middleware import auth_middleware
+from app.middleware.camel_case_middleware import camel_case_middleware
 from app.routers import (
     answer,
     answer_star,
@@ -74,6 +76,9 @@ app.add_middleware(
 )
 
 app.middleware("http")(auth_middleware)
+
+# ✅ Camel Case 미들웨어 추가
+app.middleware("http")(camel_case_middleware)
 
 # ✅ CORS 미들웨어 추가 (모든 도메인 허용)
 # TODO: 배포 시에 도메인을 명시적으로 설정해야 함
