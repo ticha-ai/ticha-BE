@@ -18,15 +18,16 @@ from app.schemas.grade import AnswerGrade
 async def grade_answer_sheet(
     answer_sheet_id: int,
     db: AsyncSession,
+    current_user: dict,
     answers: List[AnswerGrade],
-    user_id: int,
 ):
+    current_user_id = current_user["user_id"]
 
     # AnswerSheet 조회
     result = await db.execute(
         select(AnswerSheet).where(
             AnswerSheet.id == answer_sheet_id,
-            AnswerSheet.user_id == user_id,
+            AnswerSheet.user_id == current_user_id,
         )
     )
     answer_sheet = result.scalars().first()

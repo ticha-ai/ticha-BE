@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.schemas.grade import GradeRequest, GradingResultResponse
 from app.services import grade_service
 
@@ -10,17 +11,15 @@ router = APIRouter(prefix="/answers")
 
 @router.post("/{answersheet_id}/grade", status_code=status.HTTP_201_CREATED)
 async def grade_quiz(
-    request: Request,
     answersheet_id: int,
     grade_request: GradeRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
+    # TODO) 실제 현재 사용자 정보 가져오는 로직 추가
 
     result = await grade_service.grade_answer_sheet(
-        answer_sheet_id=answersheet_id,
-        db=db,
-        answers=grade_request.answers,
-        user_id=request.state.user.id,
+        answersheet_id, db, current_user, grade_request.answers
     )
 
     if not result:

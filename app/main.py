@@ -8,17 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.core.config import settings  # ✅ 환경 변수 설정 가져오기
 from app.core.public_routes import PublicRoute
 from app.middleware.auth_middleware import auth_middleware
-from app.middleware.camel_case_middleware import camel_case_middleware
-from app.routers import (
-    answer,
-    answer_star,
-    auth,
-    basic_auth,
-    grade,
-    pages,
-    quiz,
-    study_dashboard,
-)
+from app.routers import answer, answer_star, auth, basic_auth, grade, pages, quiz
 
 # security_scheme 정의
 security_scheme = HTTPBearer(description="JWT 토큰을 입력하세요.")
@@ -76,9 +66,6 @@ app.add_middleware(
 
 app.middleware("http")(auth_middleware)
 
-# ✅ Camel Case 미들웨어 추가
-app.middleware("http")(camel_case_middleware)
-
 # ✅ CORS 미들웨어 추가 (모든 도메인 허용)
 # TODO: 배포 시에 도메인을 명시적으로 설정해야 함
 app.add_middleware(
@@ -100,4 +87,3 @@ app.include_router(quiz.router, prefix="/api/v1", tags=["quizzes"])
 app.include_router(answer.router, prefix="/api/v1", tags=["answers"])
 app.include_router(grade.router, prefix="/api/v1", tags=["grade"])
 app.include_router(answer_star.router, prefix="/api/v1", tags=["star"])
-app.include_router(study_dashboard.router, prefix="/api/v1", tags=["study-dashboard"])
