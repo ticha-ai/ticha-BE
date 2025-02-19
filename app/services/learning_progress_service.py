@@ -1,7 +1,10 @@
+from typing import List
+
+from sqlalchemy.orm import Session
+
 from app.models.learning_progress import LearningStatus
 from app.repositories.learning_progress_repository import LearningProgressRepository
-from sqlalchemy.orm import Session
-from typing import List
+
 
 class LearningProgressService:
     def __init__(self, db: Session):

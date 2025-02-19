@@ -1,6 +1,9 @@
-from pydantic import BaseModel
 from datetime import date
+
+from pydantic import BaseModel
+
 from app.models.learning_progress import LearningStatus
+
 
 class LearningProgressResponse(BaseModel):
     title: str

@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, List
-from sqlalchemy import ForeignKey, Integer, String, Date, Enum, CheckConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import date
 import enum
+from datetime import date
+from typing import TYPE_CHECKING, List
+
+from sqlalchemy import CheckConstraint, Date, Enum, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, BaseTimestamp
 
@@ -34,7 +35,9 @@ class LearningProgress(Base, BaseTimestamp):
     status: Mapped[LearningStatus] = mapped_column(
         Enum(LearningStatus), nullable=False, default=LearningStatus.IN_PROGRESS
     )
-    learning_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    learning_date: Mapped[date] = mapped_column(
+        Date, nullable=False, default=date.today
+    )
 
     # ============== #
     #   Relationships

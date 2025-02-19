@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.core.database import async_session
+from app.models import LearningProgress, LearningStatus
 from app.models.answer_sheet import AnswerSheet, AnswerSheetStatus
 from app.models.chapter import Chapter
 from app.models.grading_result import GradingResult
@@ -17,8 +18,6 @@ from app.models.study_log import StudyLog
 from app.models.user import User
 from app.models.user_answer import UserAnswer
 from app.models.user_problem_stat import UserProblemStat
-from app.models import LearningProgress, LearningStatus
-
 
 fake = Faker()
 
@@ -321,6 +320,7 @@ async def seed_user_problem_stats(user_count: int = 10, problem_count: int = 150
                 f"⚠️ User problem stats already seeded or integrity error occurred: {e}"
             )
 
+
 async def seed_learning_progress(user_count: int = 10, progress_per_user: int = 5):
     async with async_session() as session:
         # ✅ 사용자 목록 가져오기
@@ -340,14 +340,17 @@ async def seed_learning_progress(user_count: int = 10, progress_per_user: int = 
                     title=f"Quiz {random.randint(1, 100)}",
                     progress=random.randint(0, 100),
                     status=random.choice(list(LearningStatus)),
-                    learning_date=datetime.now().date() - timedelta(days=random.randint(0, 30)),
+                    learning_date=datetime.now().date()
+                    - timedelta(days=random.randint(0, 30)),
                 )
                 session.add(new_progress)
                 learning_progress_entries.append(new_progress)
 
         try:
             await session.commit()
-            print(f"✅ {len(learning_progress_entries)} learning progress entries seeded.")
+            print(
+                f"✅ {len(learning_progress_entries)} learning progress entries seeded."
+            )
         except IntegrityError as e:
             await session.rollback()
             print(f"⚠️ Integrity error occurred while seeding learning progress: {e}")

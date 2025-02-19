@@ -1,13 +1,18 @@
+from typing import List, Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
 from app.models.learning_progress import LearningProgress, LearningStatus
-from typing import List, Optional
+
 
 class LearningProgressRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_by_user_id(self, user_id: str, status: Optional[LearningStatus] = None) -> List[LearningProgress]:
+    async def get_by_user_id(
+        self, user_id: str, status: Optional[LearningStatus] = None
+    ) -> List[LearningProgress]:
         stmt = select(LearningProgress).where(LearningProgress.user_id == user_id)
         if status:
             stmt = stmt.where(LearningProgress.status == status)
