@@ -9,6 +9,7 @@ class Base(DeclarativeBase):
 from app.models.answer_sheet import AnswerSheet
 from app.models.chapter import Chapter
 from app.models.grading_result import GradingResult
+from app.models.learning_progress import LearningProgress, LearningStatus
 from app.models.problem import Problem
 from app.models.problem_in_quiz import ProblemInQuiz
 from app.models.quiz import Quiz

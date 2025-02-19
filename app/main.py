@@ -15,6 +15,7 @@ from app.routers import (
     auth,
     basic_auth,
     grade,
+    learning_progress,
     pages,
     quiz,
     study_dashboard,
@@ -100,4 +101,8 @@ app.include_router(quiz.router, prefix="/api/v1", tags=["quizzes"])
 app.include_router(answer.router, prefix="/api/v1", tags=["answers"])
 app.include_router(grade.router, prefix="/api/v1", tags=["grade"])
 app.include_router(answer_star.router, prefix="/api/v1", tags=["star"])
+app.include_router(answer_star.router, prefix="/api/v1", tags=["learning-progress"])
+app.include_router(
+    learning_progress.router, prefix="/api/v1", tags=["learning-progress"]
+)
 app.include_router(study_dashboard.router, prefix="/api/v1", tags=["study-dashboard"])

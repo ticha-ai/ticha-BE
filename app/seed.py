@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.core.database import async_session
+from app.models import LearningProgress, LearningStatus
 from app.models.answer_sheet import AnswerSheet, AnswerSheetStatus
 from app.models.chapter import Chapter
 from app.models.grading_result import GradingResult
@@ -320,6 +321,41 @@ async def seed_user_problem_stats(user_count: int = 10, problem_count: int = 150
             )
 
 
+async def seed_learning_progress(user_count: int = 10, progress_per_user: int = 5):
+    async with async_session() as session:
+        # ✅ 사용자 목록 가져오기
+        stmt = select(User.id)
+        result = await session.execute(stmt)
+        users = result.scalars().all()
+
+        if not users:
+            print("⚠️ No users found in the database. Please seed users first!")
+            return
+
+        learning_progress_entries = []
+        for user_id in random.sample(users, min(user_count, len(users))):
+            for _ in range(progress_per_user):
+                new_progress = LearningProgress(
+                    user_id=user_id,
+                    title=f"Quiz {random.randint(1, 100)}",
+                    progress=random.randint(0, 100),
+                    status=random.choice(list(LearningStatus)),
+                    learning_date=datetime.now().date()
+                    - timedelta(days=random.randint(0, 30)),
+                )
+                session.add(new_progress)
+                learning_progress_entries.append(new_progress)
+
+        try:
+            await session.commit()
+            print(
+                f"✅ {len(learning_progress_entries)} learning progress entries seeded."
+            )
+        except IntegrityError as e:
+            await session.rollback()
+            print(f"⚠️ Integrity error occurred while seeding learning progress: {e}")
+
+
 async def main():
     print("🌱 Starting database seeding...")
     await seed_users(10)  # 사용자 10명 생성
@@ -334,6 +370,7 @@ async def main():
     await seed_grading_results(user_answers)  # 답안지당 10개 문제 채점 결과 생성
     await seed_study_logs(10, 5)  # 사용자당 5개의 학습 로그 생성
     await seed_user_problem_stats(10, 150)  # 사용자당 150개의 문제 통계 생성
+    await seed_learning_progress(10, 5)  # ✅ 사용자당 5개의 학습 진행 데이터 생성
     print("✅ Seeding completed!")
 
 
