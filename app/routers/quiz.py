@@ -1,11 +1,10 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.exceptions import ValidationError
-from app.core.security import get_current_user
 from app.schemas.quiz import (
     QuizCreateRequest,
     QuizData,
@@ -22,22 +21,20 @@ logger = logging.getLogger(__name__)
     "/quizzes", response_model=QuizResponse, status_code=status.HTTP_201_CREATED
 )
 async def create_quiz_endpoint(
-    quiz_in: QuizCreateRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    request: Request, quiz_in: QuizCreateRequest, db: AsyncSession = Depends(get_db)
 ):
     """
     문제지 생성 엔드포인트
     """
     try:
-        quiz = await create_quiz(db, quiz_in, current_user)
+        quiz = await create_quiz(db, quiz_in, request.state.user.id)
         response_data = QuizData(
             quiz_id=quiz.id,
             chapter_id=quiz.chapter_id,
             question_count=quiz.total_problems_count,
             difficulty=quiz.difficulty,
             status=quiz.status,
-            user_id=quiz.user_id,
+            user_id=request.state.user.id,
             created_at=quiz.created_at,
         )
         return QuizResponse(
