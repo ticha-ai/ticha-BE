@@ -144,7 +144,9 @@ class StudyDashboardService:
                 answered_count = answered_count_result.scalar()
 
                 # 진행률 계산
-                progress_rate = (answered_count / total_problems) * 100
+                progress_rate = (
+                    (answered_count / total_problems * 100) if total_problems > 0 else 0
+                )
 
                 study_date = (
                     answer_sheet.updated_at.date()

@@ -36,12 +36,12 @@ class InProgressAnswerSheetResponse(BaseModel):
 class ChapterStatistics(BaseModel):
     chapter_id: int
     chapter_name: str
-    solved_problems: int  # 단원별 푼 문제 수
+    solved_problems: int  # 단원별 푼 문제 수 (정답/오답 모두 포함)
     correct_answers: int  # 단원별 정답 수
     accuracy_rate: float  # 단원별 정답률
 
 
 class ChapterStatisticsResponse(BaseModel):
     statistics: List[ChapterStatistics]
-    total_solved_problems: int  # 전체 푼 문제 수
-    total_accuracy_rate: float  # 전체 정답률
+    total_solved_problems: int  # 전체 푼 문제 수 (정답/오답 모두 포함)
+    total_accuracy_rate: float  # 전체 정답률 (백분율, 0-100)
