@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.study_dashboard import CalendarStudyRecordsResponse
+from app.schemas.study_dashboard import (
+    CalendarStudyRecordsResponse,
+    InProgressAnswerSheetResponse,
+)
 from app.services.study_dashboard_service import StudyDashboardService
 
 router = APIRouter()
@@ -32,3 +36,15 @@ async def get_calendar_study_records(
         raise HTTPException(
             status_code=500, detail=f"Failed to fetch calendar study records: {str(e)}"
         )
+
+
+@router.get("/answer-sheets/in-progress", response_model=InProgressAnswerSheetResponse)
+async def get_in_progress_answer_sheets(
+    request: Request, db: AsyncSession = Depends(get_db)
+):
+    """
+    현재 로그인한 사용자가 진행 중인 답안지 목록을 조회합니다.
+    """
+    user = request.state.user
+    service = StudyDashboardService(db)
+    return await service.get_in_progress_answer_sheets(user.id)

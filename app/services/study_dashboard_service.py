@@ -2,16 +2,22 @@ import logging
 from calendar import monthrange
 from datetime import date
 
-from fastapi import HTTPException
-from sqlalchemy import extract, select
+from fastapi import HTTPException, status
+from sqlalchemy import extract, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.models.answer_sheet import AnswerSheetStatus
+from app.models.answer_sheet import AnswerSheet, AnswerSheetStatus
 from app.models.quiz import Quiz
 from app.models.study_log import StudyLog
-from app.schemas.study_dashboard import CalendarStudyRecordsResponse, StudyRecordDay
+from app.models.user_answer import UserAnswer
+from app.schemas.study_dashboard import (
+    CalendarStudyRecordsResponse,
+    InProgressAnswerSheet,
+    InProgressAnswerSheetResponse,
+    StudyRecordDay,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,4 +106,59 @@ class StudyDashboardService:
             logger.error(f"데이터베이스 조회 중 오류 발생: {e}")
             raise HTTPException(
                 status_code=500, detail="캘린더 기록을 조회하는 중 오류가 발생했습니다."
+            )
+
+    async def get_in_progress_answer_sheets(
+        self, user_id: int
+    ) -> InProgressAnswerSheetResponse:
+        try:
+            query = (
+                select(AnswerSheet)
+                .where(
+                    AnswerSheet.user_id == user_id,
+                    AnswerSheet.status == AnswerSheetStatus.IN_PROGRESS.value,
+                )
+                .options(joinedload(AnswerSheet.quiz))
+            )
+            result = await self.db.execute(query)
+            answer_sheets = result.scalars().all()
+
+            # 응답 데이터 구성
+            response_data = []
+            for answer_sheet in answer_sheets:
+                total_problems = answer_sheet.quiz.total_problems_count
+
+                # user_answer 테이블에서 해당 answer_sheet의 공백이 아닌 답변 개수 조회
+                answered_count_query = select(func.count(UserAnswer.id)).where(
+                    UserAnswer.answer_sheet_id == answer_sheet.id,
+                    UserAnswer.user_answer != "",  # 공백이 아닌 답변만 카운트
+                )
+                answered_count_result = await self.db.execute(answered_count_query)
+                answered_count = answered_count_result.scalar()
+
+                # 진행률 계산
+                progress_rate = (answered_count / total_problems) * 100
+
+                study_date = (
+                    answer_sheet.updated_at.date()
+                    if answer_sheet.updated_at
+                    else answer_sheet.created_at.date()
+                )
+
+                response_data.append(
+                    InProgressAnswerSheet(
+                        answer_sheet_id=answer_sheet.id,
+                        quiz_title=answer_sheet.quiz.title,
+                        progress_rate=progress_rate,  # 진행률 계산
+                        study_date=study_date,
+                    )
+                )
+
+            return InProgressAnswerSheetResponse(answer_sheets=response_data)
+
+        except Exception as e:
+            logger.error(f"Error fetching in-progress answer sheets: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to fetch in-progress answer sheets.",
             )
