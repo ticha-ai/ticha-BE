@@ -35,6 +35,7 @@ class InProgressAnswerSheetResponse(BaseModel):
 
 class ChapterStatistics(BaseModel):
     chapter_id: int
+    chapter_name: str
     solved_problems: int  # 단원별 푼 문제 수
     correct_answers: int  # 단원별 정답 수
     accuracy_rate: float  # 단원별 정답률
